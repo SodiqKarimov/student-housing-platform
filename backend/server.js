@@ -37,11 +37,12 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS || '*';
 app.use(cors({
-  origin: (process.env.ALLOWED_ORIGINS || '').split(','),
+  origin: allowedOrigins === '*' ? '*' : allowedOrigins.split(','),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  credentials: allowedOrigins !== '*',
 }));
 
 // Rate Limiting (DDoS himoyasi)
