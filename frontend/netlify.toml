@@ -1,0 +1,13 @@
+[build]
+  command = "npm install && npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_API_URL = "https://student-housing-backend.onrender.com/api/v1"
+
+# React Router uchun: barcha yo'llar index.html ga qaytadi
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

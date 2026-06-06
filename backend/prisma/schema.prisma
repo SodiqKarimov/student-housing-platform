@@ -1,0 +1,328 @@
+// ================================================================
+// TALABALAR TURAR JOYI BOSHQARUV TIZIMI
+// Test rejimi: SQLite (enum yo'q, String ishlatiladi)
+// Production: schema.postgresql.prisma ga o'tkazing
+// ================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Test: sqlite | Production: "postgresql" ga o'zgartiring
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// UserRole: SUPER_ADMIN | ADMIN | DEAN_OFFICE | DORMITORY_STAFF | STUDENT
+// UserStatus: ACTIVE | INACTIVE | BLOCKED | PENDING_VERIFICATION
+
+model User {
+  id             String    @id @default(uuid())
+  oneIdSub       String?   @unique
+  hemisStudentId String?   @unique
+  pinfl          String?   @unique
+  firstName      String
+  lastName       String
+  middleName     String?
+  email          String    @unique
+  phone          String?
+  role           String    @default("STUDENT")
+  status         String    @default("PENDING_VERIFICATION")
+  passwordHash   String?
+  lastLoginAt    DateTime?
+  lastLoginIp    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  student       Student?
+  auditLogs     AuditLog[]
+  sessions      UserSession[]
+  notifications Notification[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+// HousingType: DORMITORY | RENTAL | COMMUTER
+// StudentStatus: STUDYING | ACADEMIC_LEAVE | EXPELLED | GRADUATED | TRANSFERRED
+// Gender: MALE | FEMALE
+
+model Student {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  hemisId         String?  @unique
+  studentIdNumber String   @unique
+  dateOfBirth     DateTime
+  gender          String   @default("MALE")
+  nationality     String   @default("O'zbekiston")
+  passportSeries  String?
+  passportNumber  String?
+  pinfl           String   @unique
+  faculty         String
+  department      String
+  specialty       String
+  courseYear      Int
+  educationForm   String
+  educationBasis  String
+  housingType     String   @default("COMMUTER")
+  status          String   @default("STUDYING")
+  homeRegion      String
+  homeDistrict    String
+  homeAddress     String
+  isOrphan        Boolean  @default(false)
+  isDisabled      Boolean  @default(false)
+  isMartialArt    Boolean  @default(false)
+  isFromRural     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id])
+  dormitoryBookings    DormitoryBooking[]
+  rentalRegistration   RentalRegistration?
+  commuterRegistration CommuterRegistration?
+  documents            StudentDocument[]
+  payments             Payment[]
+
+  @@index([faculty])
+  @@index([housingType])
+  @@map("students")
+}
+
+// DormitoryStatus: ACTIVE | MAINTENANCE | CLOSED
+
+model Dormitory {
+  id               String   @id @default(uuid())
+  name             String
+  address          String
+  region           String
+  totalRooms       Int
+  totalCapacity    Int
+  currentOccupancy Int      @default(0)
+  genderRestriction String? // MALE | FEMALE | null
+  status           String   @default("ACTIVE")
+  amenities        String   @default("[]")
+  phoneNumber      String?
+  email            String?
+  managerId        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  rooms    Room[]
+  bookings DormitoryBooking[]
+
+  @@map("dormitories")
+}
+
+// RoomType: SINGLE | DOUBLE | TRIPLE | QUAD
+// RoomStatus: AVAILABLE | FULL | MAINTENANCE | RESERVED
+
+model Room {
+  id            String   @id @default(uuid())
+  dormitoryId   String
+  roomNumber    String
+  floor         Int
+  type          String   @default("DOUBLE")
+  capacity      Int
+  currentCount  Int      @default(0)
+  status        String   @default("AVAILABLE")
+  pricePerMonth Float    @default(0)
+  amenities     String   @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dormitory Dormitory        @relation(fields: [dormitoryId], references: [id])
+  bookings  DormitoryBooking[]
+
+  @@unique([dormitoryId, roomNumber])
+  @@index([dormitoryId, status])
+  @@map("rooms")
+}
+
+// BookingStatus: PENDING | APPROVED | REJECTED | ACTIVE | CHECKED_OUT | CANCELLED
+
+model DormitoryBooking {
+  id              String    @id @default(uuid())
+  studentId       String
+  dormitoryId     String
+  roomId          String
+  checkInDate     DateTime
+  checkOutDate    DateTime?
+  status          String    @default("PENDING")
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  semester        String
+  academicYear    String
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  student   Student          @relation(fields: [studentId], references: [id])
+  dormitory Dormitory        @relation(fields: [dormitoryId], references: [id])
+  room      Room             @relation(fields: [roomId], references: [id])
+  payments  Payment[]
+
+  @@index([studentId])
+  @@index([status])
+  @@map("dormitory_bookings")
+}
+
+// RentalVerificationStatus: PENDING | VERIFIED | REJECTED | EXPIRED
+
+model RentalRegistration {
+  id                  String    @id @default(uuid())
+  studentId           String    @unique
+  region              String
+  district            String
+  address             String
+  latitude            Float?
+  longitude           Float?
+  ownerFullName       String
+  ownerPhone          String
+  ownerPinfl          String?
+  contractNumber      String?
+  contractDate        DateTime?
+  monthlyRent         Float?
+  verificationStatus  String    @default("PENDING")
+  verifiedBy          String?
+  verifiedAt          DateTime?
+  verificationNote    String?
+  mahallahName        String?
+  mahallahConfirmed   Boolean   @default(false)
+  mahallahConfirmedAt DateTime?
+  registeredAt        DateTime  @default(now())
+  expiresAt           DateTime?
+  updatedAt           DateTime  @updatedAt
+
+  student   Student          @relation(fields: [studentId], references: [id])
+  documents StudentDocument[]
+
+  @@index([verificationStatus])
+  @@map("rental_registrations")
+}
+
+model CommuterRegistration {
+  id                   String   @id @default(uuid())
+  studentId            String   @unique
+  region               String
+  district             String
+  address              String
+  distanceKm           Float
+  travelTimeMin        Int
+  transportType        String
+  isEligibleForBenefit Boolean  @default(false)
+  confirmedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@map("commuter_registrations")
+}
+
+// DocumentType: PASSPORT_COPY | STUDENT_ID | RENTAL_CONTRACT | MAHALLAH_CONFIRMATION | ...
+
+model StudentDocument {
+  id           String    @id @default(uuid())
+  studentId    String
+  rentalId     String?
+  documentType String
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  isVerified   Boolean   @default(false)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  uploadedAt   DateTime  @default(now())
+  expiresAt    DateTime?
+
+  student Student             @relation(fields: [studentId], references: [id])
+  rental  RentalRegistration? @relation(fields: [rentalId], references: [id])
+
+  @@map("student_documents")
+}
+
+// PaymentStatus: PENDING | COMPLETED | FAILED | REFUNDED
+// PaymentType: DORMITORY_FEE | UTILITY_FEE | FINE | OTHER
+
+model Payment {
+  id            String    @id @default(uuid())
+  studentId     String
+  bookingId     String?
+  type          String
+  amount        Float
+  currency      String    @default("UZS")
+  status        String    @default("PENDING")
+  provider      String?
+  transactionId String?   @unique
+  description   String?
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  student Student           @relation(fields: [studentId], references: [id])
+  booking DormitoryBooking? @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+// AuditAction: LOGIN | LOGOUT | CREATE | UPDATE | DELETE | VIEW_PERSONAL_DATA | ...
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  oldValues   String?
+  newValues   String?
+  ipAddress   String?
+  userAgent   String?
+  endpoint    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// NotificationChannel: SYSTEM | TELEGRAM | SMS | EMAIL
+// NotificationStatus: UNREAD | READ
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  channel   String    @default("SYSTEM")
+  status    String    @default("UNREAD")
+  metadata  String?
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("notifications")
+}
