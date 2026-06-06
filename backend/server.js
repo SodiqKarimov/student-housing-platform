@@ -12,7 +12,7 @@ const { maskSensitiveData } = require('./src/middleware/dataProtection.middlewar
 
 // Routes
 const authRoutes = require('./src/routes/auth.routes');
-const devRoutes = process.env.NODE_ENV !== 'production' ? require('./src/routes/dev.routes') : null;
+const devRoutes = (process.env.NODE_ENV !== 'production' || process.env.USE_MOCK === 'true') ? require('./src/routes/dev.routes') : null;
 const studentRoutes = require('./src/routes/student.routes');
 const dormitoryRoutes = require('./src/routes/dormitory.routes');
 const rentalRoutes = require('./src/routes/rental.routes');
