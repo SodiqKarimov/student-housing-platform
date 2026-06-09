@@ -9,6 +9,7 @@ const navItems = [
   { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/bookings', label: 'Arizalar', icon: '📋', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
+  { path: '/users', label: 'Foydalanuvchilar', icon: '👥', roles: ['SUPER_ADMIN'] },
   { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'STUDENT'] },
 ];
 

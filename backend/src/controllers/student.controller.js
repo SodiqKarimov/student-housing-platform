@@ -1,4 +1,5 @@
 const { prisma } = require('../config/database');
+const { v4: uuidv4 } = require('uuid');
 const hemisService = require('../services/hemis.service');
 const { logAudit } = require('../middleware/audit.middleware');
 const { success, error, paginated } = require('../utils/response');
@@ -148,6 +149,98 @@ exports.getHousingStats = async (req, res) => {
     byFaculty,
     byCourse,
   }, 'Yashash statistikasi');
+};
+
+// Yangi talaba qo'shish (Admin)
+exports.createStudent = async (req, res) => {
+  const {
+    firstName, lastName, middleName, email, phone,
+    pinfl, dateOfBirth, gender, nationality,
+    faculty, department, specialty, courseYear,
+    educationForm, educationBasis, housingType,
+    homeRegion, homeDistrict, homeAddress,
+    studentIdNumber, isOrphan, isDisabled, isMartialArt, isFromRural,
+  } = req.body;
+
+  if (!firstName || !lastName || !pinfl || !faculty || !dateOfBirth) {
+    return error(res, 'Ism, familiya, PINFL, fakultet va tug\'ilgan sana majburiy', 400);
+  }
+
+  const existingUser = await prisma.user.findFirst({ where: { pinfl } });
+  if (existingUser) return error(res, 'Bu PINFL allaqachon tizimda mavjud', 409);
+
+  const emailToUse = email || `${pinfl}@student.uz`;
+  const existingEmail = await prisma.user.findFirst({ where: { email: emailToUse } });
+  if (existingEmail) return error(res, 'Bu email allaqachon mavjud', 409);
+
+  const student = await prisma.user.create({
+    data: {
+      firstName, lastName, middleName,
+      email: emailToUse,
+      phone,
+      role: 'STUDENT',
+      status: 'ACTIVE',
+      pinfl,
+      student: {
+        create: {
+          studentIdNumber: studentIdNumber || uuidv4().slice(0, 12).toUpperCase(),
+          dateOfBirth: new Date(dateOfBirth),
+          gender: gender || 'MALE',
+          pinfl,
+          nationality: nationality || "O'zbekiston",
+          faculty,
+          department: department || faculty,
+          specialty: specialty || faculty,
+          courseYear: parseInt(courseYear) || 1,
+          educationForm: educationForm || 'Kunduzgi',
+          educationBasis: educationBasis || 'Grant',
+          housingType: housingType || 'COMMUTER',
+          homeRegion: homeRegion || "Noma'lum",
+          homeDistrict: homeDistrict || "Noma'lum",
+          homeAddress: homeAddress || "Noma'lum",
+          isOrphan: !!isOrphan,
+          isDisabled: !!isDisabled,
+          isMartialArt: !!isMartialArt,
+          isFromRural: !!isFromRural,
+        },
+      },
+    },
+    include: { student: true },
+  });
+
+  await logAudit(req.user.id, 'CREATE', 'Student', student.student.id, {
+    newValues: { firstName, lastName, pinfl },
+    description: "Yangi talaba qo'shildi",
+  });
+
+  return success(res, student, "Talaba muvaffaqiyatli qo'shildi", 201);
+};
+
+// Talaba ma'lumotlarini yangilash
+exports.updateStudent = async (req, res) => {
+  const { id } = req.params;
+  const { firstName, lastName, middleName, phone, faculty, department, specialty, courseYear, educationForm, educationBasis, homeRegion, homeDistrict, homeAddress } = req.body;
+
+  const student = await prisma.student.findUnique({ where: { id }, include: { user: true } });
+  if (!student) return error(res, 'Talaba topilmadi', 404);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: student.userId },
+      data: { firstName, lastName, middleName, phone },
+    }),
+    prisma.student.update({
+      where: { id },
+      data: { faculty, department, specialty, courseYear: courseYear ? parseInt(courseYear) : undefined, educationForm, educationBasis, homeRegion, homeDistrict, homeAddress },
+    }),
+  ]);
+
+  await logAudit(req.user.id, 'UPDATE', 'Student', id, {
+    description: "Talaba ma'lumotlari yangilandi",
+  });
+
+  const updated = await prisma.student.findUnique({ where: { id }, include: { user: true } });
+  return success(res, updated, "Ma'lumotlar yangilandi");
 };
 
 // Talaba yashash holati o'zgartirish (Admin)

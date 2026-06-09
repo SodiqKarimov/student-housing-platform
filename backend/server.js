@@ -17,6 +17,7 @@ const studentRoutes = require('./src/routes/student.routes');
 const dormitoryRoutes = require('./src/routes/dormitory.routes');
 const rentalRoutes = require('./src/routes/rental.routes');
 const commuterRoutes = require('./src/routes/commuter.routes');
+const userRoutes = require('./src/routes/user.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -83,6 +84,7 @@ if (devRoutes) {
   app.use(`${API}/dev`, devRoutes);
   logger.warn('DEV routes faol! Production\'da o\'chiring.');
 }
+app.use(`${API}/users`, userRoutes);
 app.use(`${API}/students`, studentRoutes);
 app.use(`${API}/dormitories`, dormitoryRoutes);
 app.use(`${API}/rentals`, rentalRoutes);

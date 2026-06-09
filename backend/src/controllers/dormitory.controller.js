@@ -50,7 +50,7 @@ exports.createDormitory = async (req, res) => {
   const { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities, phoneNumber, email } = req.body;
 
   const dormitory = await prisma.dormitory.create({
-    data: { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities: amenities || [], phoneNumber, email },
+    data: { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities: JSON.stringify(amenities || []), phoneNumber, email },
   });
 
   await logAudit(req.user.id, 'CREATE', 'Dormitory', dormitory.id, {
@@ -73,7 +73,7 @@ exports.createRoom = async (req, res) => {
   if (existing) return error(res, 'Bu xona raqami allaqachon mavjud', 409);
 
   const room = await prisma.room.create({
-    data: { dormitoryId, roomNumber, floor, type, capacity, pricePerMonth, amenities: amenities || [] },
+    data: { dormitoryId, roomNumber, floor, type, capacity, pricePerMonth, amenities: JSON.stringify(amenities || []) },
   });
 
   return success(res, room, 'Xona yaratildi', 201);

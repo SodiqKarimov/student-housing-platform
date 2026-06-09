@@ -1,8 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+const API = import.meta.env.VITE_API_URL || '/api/v1';
+
+const TEST_USERS = [
+  { sub: 'mock-admin-001',   name: 'Aziz Karimov',    role: 'Super Administrator', color: '#1a3a6b' },
+  { sub: 'mock-dean-001',    name: 'Nodira Rahimova', role: 'Dekanat xodimi',      color: '#0d8f5c' },
+  { sub: 'mock-student-001', name: 'Jasur Toshmatov', role: 'Talaba (3-kurs)',     color: '#8f4d0d' },
+  { sub: 'mock-student-002', name: 'Malika Yusupova', role: 'Talaba (2-kurs)',     color: '#6b1a6b' },
+];
+
 export default function LoginPage() {
-  const { loginWithOneId } = useAuth();
+  const { setTokens } = useAuth();
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState('');
+
+  const loginAs = async (sub) => {
+    setLoading(sub);
+    setError('');
+    try {
+      const res = await fetch(`${API}/dev/mock-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sub }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTokens(data.data.accessToken, data.data.refreshToken, data.data.user);
+        window.location.href = '/dashboard';
+      } else {
+        setError(data.message || 'Xato yuz berdi');
+      }
+    } catch {
+      setError('Server bilan bog\'lanib bo\'lmadi. Biroz kuting...');
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -15,26 +49,29 @@ export default function LoginPage() {
 
         <div style={styles.divider} />
 
-        <div style={styles.content}>
-          <p style={styles.description}>
-            Tizimga kirish uchun O'zbekiston Respublikasi yagona identifikatsiya tizimi
-            <strong> OneID</strong> dan foydalaning.
-          </p>
+        <div style={styles.badge}>🧪 Demo rejim — Foydalanuvchi tanlang</div>
 
-          <button onClick={loginWithOneId} style={styles.oneIdButton}>
-            <img
-              src="https://id.egov.uz/images/oneid-logo.png"
-              alt="OneID"
-              style={styles.oneIdLogo}
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <span>OneID orqali kirish</span>
-          </button>
-
-          <p style={styles.hint}>
-            OneID — O'zbekiston Respublikasi fuqarolarining yagona raqamli identifikatori
-          </p>
+        <div style={styles.userList}>
+          {TEST_USERS.map((u) => (
+            <button
+              key={u.sub}
+              onClick={() => loginAs(u.sub)}
+              disabled={loading !== null}
+              style={{ ...styles.userBtn, opacity: loading && loading !== u.sub ? 0.5 : 1 }}
+            >
+              <div style={{ ...styles.avatar, background: u.color }}>
+                {u.name[0]}
+              </div>
+              <div style={styles.userInfo}>
+                <div style={styles.userName}>{u.name}</div>
+                <div style={styles.userRole}>{u.role}</div>
+              </div>
+              {loading === u.sub && <div style={styles.spinner}>⏳</div>}
+            </button>
+          ))}
         </div>
+
+        {error && <div style={styles.error}>{error}</div>}
 
         <div style={styles.footer}>
           <p style={styles.footerText}>
@@ -58,36 +95,62 @@ const styles = {
   card: {
     background: '#fff',
     borderRadius: '16px',
-    padding: '40px',
+    padding: '36px',
     width: '100%',
-    maxWidth: '440px',
+    maxWidth: '420px',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
   },
-  logo: { textAlign: 'center', marginBottom: '24px' },
-  logoIcon: { fontSize: '48px', marginBottom: '8px' },
-  title: { fontSize: '24px', fontWeight: '700', color: '#1a3a6b', margin: '0 0 4px' },
-  subtitle: { fontSize: '14px', color: '#666', margin: 0 },
-  divider: { height: '1px', background: '#eee', margin: '24px 0' },
-  content: { textAlign: 'center' },
-  description: { fontSize: '14px', color: '#555', lineHeight: '1.6', marginBottom: '24px' },
-  oneIdButton: {
+  logo: { textAlign: 'center', marginBottom: '20px' },
+  logoIcon: { fontSize: '44px', marginBottom: '8px' },
+  title: { fontSize: '22px', fontWeight: '700', color: '#1a3a6b', margin: '0 0 4px' },
+  subtitle: { fontSize: '13px', color: '#666', margin: 0 },
+  divider: { height: '1px', background: '#eee', margin: '20px 0' },
+  badge: {
+    background: '#fff8e1',
+    color: '#b07a00',
+    border: '1px solid #ffe082',
+    borderRadius: '8px',
+    padding: '8px 14px',
+    fontSize: '13px',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  userList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  userBtn: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    width: '100%',
-    padding: '14px 24px',
-    background: '#1a3a6b',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
+    gap: '12px',
+    padding: '12px 14px',
+    border: '2px solid #e8edf4',
+    borderRadius: '10px',
+    background: '#fff',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    textAlign: 'left',
+    transition: 'all 0.15s',
+    width: '100%',
   },
-  oneIdLogo: { height: '24px', width: 'auto' },
-  hint: { fontSize: '12px', color: '#999', marginTop: '12px', lineHeight: '1.5' },
-  footer: { marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #eee' },
+  avatar: {
+    width: '40px', height: '40px',
+    borderRadius: '50%',
+    color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontWeight: '700', fontSize: '16px', flexShrink: 0,
+  },
+  userInfo: { flex: 1 },
+  userName: { fontWeight: '600', color: '#1a3a6b', fontSize: '14px' },
+  userRole: { fontSize: '12px', color: '#888', marginTop: '2px' },
+  spinner: { fontSize: '16px' },
+  error: {
+    marginTop: '12px',
+    padding: '10px 14px',
+    background: '#fff0f0',
+    border: '1px solid #ffcccc',
+    borderRadius: '8px',
+    color: '#c0392b',
+    fontSize: '13px',
+    textAlign: 'center',
+  },
+  footer: { marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #eee' },
   footerText: { fontSize: '11px', color: '#bbb', textAlign: 'center', margin: 0 },
 };

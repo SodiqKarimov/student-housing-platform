@@ -49,8 +49,17 @@ export const studentApi = {
   getAll: (params) => api.get('/students', { params }),
   getById: (id) => api.get(`/students/${id}`),
   getHousingStats: () => api.get('/students/stats/housing'),
+  create: (data) => api.post('/students', data),
+  update: (id, data) => api.put(`/students/${id}`, data),
   syncHemis: (id) => api.post(`/students/${id}/sync-hemis`),
   updateHousingType: (id, data) => api.patch(`/students/${id}/housing-type`, data),
+};
+
+export const userApi = {
+  getAll: (params) => api.get('/users', { params }),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
 };
 
 export const dormitoryApi = {

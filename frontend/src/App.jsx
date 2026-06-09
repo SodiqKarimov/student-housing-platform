@@ -4,6 +4,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/common/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import StudentsPage from './pages/StudentsPage';
+import DormitoriesPage from './pages/DormitoriesPage';
+import UsersPage from './pages/UsersPage';
+import BookingsPage from './pages/BookingsPage';
 
 function OneIdCallbackPage() {
   const [params] = useSearchParams();
@@ -54,6 +58,10 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<OneIdCallbackPage />} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/students" element={<ProtectedRoute><StudentsPage /></ProtectedRoute>} />
+      <Route path="/dormitories" element={<ProtectedRoute><DormitoriesPage /></ProtectedRoute>} />
+      <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
