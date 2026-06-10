@@ -90,6 +90,8 @@ model Student {
   isDisabled      Boolean  @default(false)
   isMartialArt    Boolean  @default(false)
   isFromRural     Boolean  @default(false)
+  guardianPhone   String?
+  guardianName    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -99,6 +101,11 @@ model Student {
   commuterRegistration CommuterRegistration?
   documents            StudentDocument[]
   payments             Payment[]
+  greenModeLogs        GreenModeLog[]
+  greenModeViolations  GreenModeViolation[]
+  greenModeExceptions  GreenModeException[]
+  faceIdEvents         FaceIdEvent[]
+  recommendations      Recommendation[]
 
   @@index([faculty])
   @@index([housingType])
@@ -124,8 +131,13 @@ model Dormitory {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  rooms    Room[]
-  bookings DormitoryBooking[]
+  rooms               Room[]
+  bookings            DormitoryBooking[]
+  greenModeSettings   GreenModeSettings?
+  greenModeLogs       GreenModeLog[]
+  greenModeViolations GreenModeViolation[]
+  greenModeExceptions GreenModeException[]
+  faceIdEvents        FaceIdEvent[]
 
   @@map("dormitories")
 }
@@ -325,4 +337,115 @@ model Notification {
 
   @@index([userId, status])
   @@map("notifications")
+}
+
+// ================================================================
+// YASHIL REJIM (GREEN MODE)
+// ================================================================
+
+model GreenModeSettings {
+  id             String   @id @default(uuid())
+  dormitoryId    String   @unique
+  entryDeadline  String   @default("22:00")
+  exitDeadline   String   @default("05:00")
+  isActive       Boolean  @default(true)
+  updatedBy      String?
+  updatedAt      DateTime @updatedAt
+
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+  @@map("green_mode_settings")
+}
+
+model GreenModeLog {
+  id          String   @id @default(uuid())
+  studentId   String
+  dormitoryId String
+  eventType   String
+  eventTime   DateTime @default(now())
+  isViolation Boolean  @default(false)
+  note        String?
+  recordedBy  String?
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+  @@index([studentId])
+  @@index([eventTime])
+  @@map("green_mode_logs")
+}
+
+model GreenModeViolation {
+  id            String    @id @default(uuid())
+  studentId     String
+  dormitoryId   String
+  violationType String
+  violationTime DateTime
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  note          String?
+  createdAt     DateTime  @default(now())
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+  @@index([studentId])
+  @@map("green_mode_violations")
+}
+
+model GreenModeException {
+  id           String   @id @default(uuid())
+  studentId    String
+  dormitoryId  String
+  reason       String
+  allowedFrom  DateTime
+  allowedUntil DateTime
+  grantedBy    String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+  @@index([studentId])
+  @@map("green_mode_exceptions")
+}
+
+// ================================================================
+// FACE ID
+// ================================================================
+
+model FaceIdEvent {
+  id          String   @id @default(uuid())
+  studentId   String?
+  dormitoryId String
+  eventType   String
+  confidence  Float    @default(0)
+  cameraId    String?
+  eventTime   DateTime @default(now())
+  isManual    Boolean  @default(false)
+  note        String?
+
+  student   Student?  @relation(fields: [studentId], references: [id])
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+  @@index([studentId])
+  @@index([eventTime])
+  @@map("faceid_events")
+}
+
+// ================================================================
+// TAVSIYANOMA
+// ================================================================
+
+model Recommendation {
+  id         String   @id @default(uuid())
+  studentId  String
+  authorId   String
+  behavior   String
+  activity   String
+  discipline String
+  comment    String?
+  rating     Int      @default(3)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+  @@index([studentId])
+  @@map("recommendations")
 }

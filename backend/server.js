@@ -18,6 +18,11 @@ const dormitoryRoutes = require('./src/routes/dormitory.routes');
 const rentalRoutes = require('./src/routes/rental.routes');
 const commuterRoutes = require('./src/routes/commuter.routes');
 const userRoutes = require('./src/routes/user.routes');
+const greenModeRoutes = require('./src/routes/green-mode.routes');
+const faceIdRoutes = require('./src/routes/face-id.routes');
+const recommendationRoutes = require('./src/routes/recommendation.routes');
+const reportsRoutes = require('./src/routes/reports.routes');
+const profileRoutes = require('./src/routes/profile.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -89,6 +94,11 @@ app.use(`${API}/students`, studentRoutes);
 app.use(`${API}/dormitories`, dormitoryRoutes);
 app.use(`${API}/rentals`, rentalRoutes);
 app.use(`${API}/commuters`, commuterRoutes);
+app.use(`${API}/green-mode`, greenModeRoutes);
+app.use(`${API}/face-id`, faceIdRoutes);
+app.use(`${API}/recommendations`, recommendationRoutes);
+app.use(`${API}/reports`, reportsRoutes);
+app.use(`${API}/profile`, profileRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

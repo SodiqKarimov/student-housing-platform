@@ -8,6 +8,13 @@ import StudentsPage from './pages/StudentsPage';
 import DormitoriesPage from './pages/DormitoriesPage';
 import UsersPage from './pages/UsersPage';
 import BookingsPage from './pages/BookingsPage';
+import RentalsPage from './pages/RentalsPage';
+import CommutersPage from './pages/CommutersPage';
+import GreenModePage from './pages/GreenModePage';
+import FaceIdPage from './pages/FaceIdPage';
+import RecommendationsPage from './pages/RecommendationsPage';
+import ReportsPage from './pages/ReportsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function OneIdCallbackPage() {
   const [params] = useSearchParams();
@@ -62,6 +69,13 @@ function AppRoutes() {
       <Route path="/dormitories" element={<ProtectedRoute><DormitoriesPage /></ProtectedRoute>} />
       <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+      <Route path="/rentals" element={<ProtectedRoute><RentalsPage /></ProtectedRoute>} />
+      <Route path="/commuters" element={<ProtectedRoute><CommutersPage /></ProtectedRoute>} />
+      <Route path="/green-mode" element={<ProtectedRoute><GreenModePage /></ProtectedRoute>} />
+      <Route path="/face-id" element={<ProtectedRoute><FaceIdPage /></ProtectedRoute>} />
+      <Route path="/recommendations" element={<ProtectedRoute><RecommendationsPage /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

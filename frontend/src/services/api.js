@@ -87,4 +87,46 @@ export const commuterApi = {
   getStats: () => api.get('/commuters/stats'),
 };
 
+export const greenModeApi = {
+  getSettings: (dormId) => api.get(`/green-mode/settings/${dormId}`),
+  updateSettings: (dormId, data) => api.put(`/green-mode/settings/${dormId}`, data),
+  addLog: (data) => api.post('/green-mode/logs', data),
+  getLogs: (params) => api.get('/green-mode/logs', { params }),
+  getViolations: (params) => api.get('/green-mode/violations', { params }),
+  resolveViolation: (id, data) => api.patch(`/green-mode/violations/${id}/resolve`, data),
+  grantException: (data) => api.post('/green-mode/exceptions', data),
+  getExceptions: () => api.get('/green-mode/exceptions'),
+  getStats: (params) => api.get('/green-mode/stats', { params }),
+};
+
+export const faceIdApi = {
+  getEvents: (params) => api.get('/face-id/events', { params }),
+  addEvent: (data) => api.post('/face-id/events', data),
+  getAbsent: (params) => api.get('/face-id/absent', { params }),
+  getStats: () => api.get('/face-id/stats'),
+};
+
+export const recommendationApi = {
+  getAll: (params) => api.get('/recommendations', { params }),
+  getByStudent: (studentId) => api.get(`/recommendations/student/${studentId}`),
+  create: (data) => api.post('/recommendations', data),
+  update: (id, data) => api.put(`/recommendations/${id}`, data),
+  remove: (id) => api.delete(`/recommendations/${id}`),
+};
+
+export const reportsApi = {
+  students: (params) => api.get('/reports/students', { params, responseType: 'blob' }),
+  dormitories: () => api.get('/reports/dormitories', { responseType: 'blob' }),
+  rentals: () => api.get('/reports/rentals', { responseType: 'blob' }),
+  violations: () => api.get('/reports/violations', { responseType: 'blob' }),
+  audit: (params) => api.get('/reports/audit', { params, responseType: 'blob' }),
+  faceId: (params) => api.get('/reports/faceid', { params, responseType: 'blob' }),
+};
+
+export const profileApi = {
+  get: () => api.get('/profile'),
+  update: (data) => api.put('/profile', data),
+  changePassword: (data) => api.post('/profile/change-password', data),
+};
+
 export default api;
