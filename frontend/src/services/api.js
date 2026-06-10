@@ -127,6 +127,11 @@ export const profileApi = {
   get: () => api.get('/profile'),
   update: (data) => api.put('/profile', data),
   changePassword: (data) => api.post('/profile/change-password', data),
+  uploadAvatar: (file) => {
+    const form = new FormData();
+    form.append('avatar', file);
+    return api.post('/profile/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 };
 
 export default api;

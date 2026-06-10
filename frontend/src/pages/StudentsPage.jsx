@@ -33,7 +33,7 @@ export default function StudentsPage() {
     setLoading(true);
     studentApi.getAll({ page, limit: 15, search: search || undefined, housingType: filterHousing || undefined })
       .then(({ data }) => {
-        setStudents(data.data?.data || []);
+        setStudents(data.data?.items || []);
         setTotal(data.data?.total || 0);
       })
       .finally(() => setLoading(false));

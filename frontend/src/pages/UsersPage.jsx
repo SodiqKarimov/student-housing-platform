@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { userApi } from '../services/api';
+import { userApi, dormitoryApi } from '../services/api';
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Administrator',
@@ -13,7 +13,7 @@ const ROLE_COLORS = {
   DORMITORY_STAFF: '#8f4d0d', STUDENT: '#555',
 };
 
-const EMPTY_FORM = { firstName: '', lastName: '', middleName: '', email: '', phone: '', role: 'DEAN_OFFICE', pinfl: '' };
+const EMPTY_FORM = { firstName: '', lastName: '', middleName: '', email: '', phone: '', role: 'DEAN_OFFICE', pinfl: '', dormitoryId: '' };
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -28,12 +28,13 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [createdInfo, setCreatedInfo] = useState(null);
+  const [dormitories, setDormitories] = useState([]);
 
   const load = useCallback(() => {
     setLoading(true);
     userApi.getAll({ page, limit: 15, search: search || undefined, role: filterRole || undefined })
       .then(({ data }) => {
-        setUsers(data.data?.data || []);
+        setUsers(data.data?.items || []);
         setTotal(data.data?.total || 0);
       })
       .finally(() => setLoading(false));
@@ -41,7 +42,16 @@ export default function UsersPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openAdd = () => { setForm(EMPTY_FORM); setEditTarget(null); setError(''); setCreatedInfo(null); setShowModal(true); };
+  const openAdd = () => {
+    setForm(EMPTY_FORM);
+    setEditTarget(null);
+    setError('');
+    setCreatedInfo(null);
+    setShowModal(true);
+    dormitoryApi.getAll({ limit: 100 })
+      .then(({ data }) => setDormitories(data.data?.items || []))
+      .catch(() => {});
+  };
   const openEdit = (u) => {
     setForm({ firstName: u.firstName, lastName: u.lastName, middleName: u.middleName || '', email: u.email, phone: u.phone || '', role: u.role, pinfl: '' });
     setEditTarget(u); setError(''); setCreatedInfo(null); setShowModal(true);
@@ -182,6 +192,17 @@ export default function UsersPage() {
                   <SelectField label="Rol *" value={form.role} onChange={v => f('role', v)}
                     options={[['ADMIN',"Yotoqxona boshlig'i"],['DEAN_OFFICE','Dekanat xodimi'],['DORMITORY_STAFF','Yotoqxona xodimi']]} />
                   <Field label="PINFL (ixtiyoriy)" value={form.pinfl} onChange={v => f('pinfl', v)} placeholder="14 raqam" />
+                  {form.role === 'ADMIN' && (
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={s.label}>Yotoqxona tayinlash</label>
+                      <select value={form.dormitoryId} onChange={e => f('dormitoryId', e.target.value)} style={s.input}>
+                        <option value="">Yotoqxona tanlanmagan</option>
+                        {dormitories.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 {error && <div style={s.errorBox}>{error}</div>}
                 <div style={s.modalFooter}>

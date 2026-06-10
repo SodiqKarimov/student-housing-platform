@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { profileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,12 +10,23 @@ export default function ProfilePage() {
   const { user: authUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const fileInputRef = useRef(null);
   const [profileForm, setProfileForm] = useState({});
   const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [tab, setTab] = useState('info');
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      await profileApi.uploadAvatar(file);
+      setMsg('Rasm muvaffaqiyatli yuklandi');
+      load();
+    } catch (e) { setErr(e.response?.data?.message || 'Rasm yuklashda xato'); }
+  };
 
   const load = async () => {
     try {
@@ -65,9 +76,17 @@ export default function ProfilePage() {
 
       {/* Header card */}
       <div style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', borderRadius: '16px', padding: '24px', marginBottom: '24px', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 700 }}>
-          {profile.firstName?.[0]}{profile.lastName?.[0]}
+        <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileInputRef.current.click()}>
+          {profile.photoUrl ? (
+            <img src={profile.photoUrl} alt="avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.5)' }} />
+          ) : (
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 700 }}>
+              {profile.firstName?.[0]}{profile.lastName?.[0]}
+            </div>
+          )}
+          <div style={{ position: 'absolute', bottom: 0, right: 0, background: '#1a3a6b', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>+</div>
         </div>
+        <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} ref={fileInputRef} />
         <div>
           <div style={{ fontSize: '20px', fontWeight: 700 }}>{profile.lastName} {profile.firstName} {profile.middleName}</div>
           <div style={{ opacity: 0.85, fontSize: '14px', marginTop: '4px' }}>

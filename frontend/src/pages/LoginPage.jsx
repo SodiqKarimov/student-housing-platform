@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const API = import.meta.env.VITE_API_URL || '/api/v1';
 
 const TEST_USERS = [
-  { sub: 'mock-admin-001',   name: 'Aziz Karimov',    role: 'Super Administrator', color: '#1a3a6b' },
-  { sub: 'mock-dean-001',    name: 'Nodira Rahimova', role: 'Dekanat xodimi',      color: '#0d8f5c' },
-  { sub: 'mock-student-001', name: 'Jasur Toshmatov', role: 'Talaba (3-kurs)',     color: '#8f4d0d' },
-  { sub: 'mock-student-002', name: 'Malika Yusupova', role: 'Talaba (2-kurs)',     color: '#6b1a6b' },
+  { sub: 'mock-admin-001', name: 'Aziz Karimov', role: 'Super Administrator', color: '#1a3a6b' },
 ];
 
 export default function LoginPage() {
   const { setTokens } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState('');
 
@@ -27,12 +26,12 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.success) {
         setTokens(data.data.accessToken, data.data.refreshToken, data.data.user);
-        window.location.href = '/dashboard';
+        navigate('/dashboard', { replace: true });
       } else {
         setError(data.message || 'Xato yuz berdi');
       }
     } catch {
-      setError('Server bilan bog\'lanib bo\'lmadi. Biroz kuting...');
+      setError('Server uyg\'onmoqda... 30 soniya kuting va qayta bosing (Render bepul rejimi)');
     } finally {
       setLoading(null);
     }

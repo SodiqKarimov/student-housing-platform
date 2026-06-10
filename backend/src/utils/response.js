@@ -16,13 +16,13 @@ const error = (res, message = 'Xato yuz berdi', statusCode = 500, errors = null)
   });
 };
 
-const paginated = (res, data, total, page, limit, message = 'Muvaffaqiyatli') => {
+const paginated = (res, items, total, page, limit, message = 'Muvaffaqiyatli') => {
   return res.status(200).json({
     success: true,
     message,
-    data,
-    pagination: {
-      total,
+    data: {
+      items,
+      total: parseInt(total),
       page: parseInt(page),
       limit: parseInt(limit),
       totalPages: Math.ceil(total / limit),

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { dormitoryApi } from '../services/api';
+import { dormitoryApi, userApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const EMPTY_DORM = { name: '', address: '', region: '', totalRooms: '', totalCapacity: '', genderRestriction: '', phoneNumber: '', email: '' };
+const EMPTY_DORM = { name: '', address: '', region: '', totalRooms: '', totalCapacity: '', genderRestriction: '', phoneNumber: '', email: '', managerId: '' };
 const EMPTY_ROOM = { roomNumber: '', floor: '1', type: 'DOUBLE', capacity: '2', pricePerMonth: '0' };
 const ROOM_TYPE_LABELS = { SINGLE: 'Yakka', DOUBLE: 'Juft', TRIPLE: 'Uchlik', QUAD: "To'rtlik" };
 
@@ -17,6 +17,7 @@ export default function DormitoriesPage() {
   const [showDormModal, setShowDormModal] = useState(false);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [dormForm, setDormForm] = useState(EMPTY_DORM);
+  const [adminUsers, setAdminUsers] = useState([]);
   const [roomForm, setRoomForm] = useState(EMPTY_ROOM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -27,7 +28,7 @@ export default function DormitoriesPage() {
   const loadDorms = useCallback(() => {
     setLoading(true);
     dormitoryApi.getAll({ limit: 50 })
-      .then(({ data }) => setDorms(data.data?.data || []))
+      .then(({ data }) => setDorms(data.data?.items || []))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,6 +42,15 @@ export default function DormitoriesPage() {
       .finally(() => setLoadingRooms(false));
   };
 
+  const openDormModal = () => {
+    setDormForm(EMPTY_DORM);
+    setError('');
+    setShowDormModal(true);
+    userApi.getAll({ role: 'ADMIN', limit: 100 })
+      .then(({ data }) => setAdminUsers(data.data?.items || []))
+      .catch(() => {});
+  };
+
   const saveDorm = async () => {
     setSaving(true); setError('');
     try {
@@ -49,6 +59,7 @@ export default function DormitoriesPage() {
         totalRooms: parseInt(dormForm.totalRooms),
         totalCapacity: parseInt(dormForm.totalCapacity),
         genderRestriction: dormForm.genderRestriction || null,
+        managerId: dormForm.managerId || null,
       });
       setShowDormModal(false);
       loadDorms();
@@ -84,7 +95,7 @@ export default function DormitoriesPage() {
           <p style={s.sub}>{dorms.length} ta yotoqxona</p>
         </div>
         {isSuperAdmin && (
-          <button onClick={() => { setDormForm(EMPTY_DORM); setError(''); setShowDormModal(true); }} style={s.btnPrimary}>
+          <button onClick={openDormModal} style={s.btnPrimary}>
             + Yotoqxona qo'shish
           </button>
         )}
@@ -190,6 +201,15 @@ export default function DormitoriesPage() {
               <Field label="Jami sig'im (o'rin) *" type="number" value={dormForm.totalCapacity} onChange={v => df('totalCapacity', v)} />
               <Field label="Telefon" value={dormForm.phoneNumber} onChange={v => df('phoneNumber', v)} placeholder="+998..." />
               <Field label="Email" value={dormForm.email} onChange={v => df('email', v)} />
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={s.label}>Rahbar (ADMIN)</label>
+                <select value={dormForm.managerId} onChange={e => df('managerId', e.target.value)} style={s.input}>
+                  <option value="">Rahbar tayinlanmagan</option>
+                  {adminUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             {error && <div style={s.errorBox}>{error}</div>}
             <div style={s.modalFooter}>

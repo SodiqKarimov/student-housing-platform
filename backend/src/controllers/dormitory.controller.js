@@ -10,6 +10,7 @@ exports.getAllDormitories = async (req, res) => {
   const where = {
     ...(region && { region: { contains: region, mode: 'insensitive' } }),
     ...(status && { status }),
+    ...(req.user.role === 'ADMIN' && { managerId: req.user.id }),
   };
 
   const [dormitories, total] = await Promise.all([
@@ -47,10 +48,10 @@ exports.getDormitoryById = async (req, res) => {
 
 // Yotoqxona yaratish (Super Admin)
 exports.createDormitory = async (req, res) => {
-  const { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities, phoneNumber, email } = req.body;
+  const { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities, phoneNumber, email, managerId } = req.body;
 
   const dormitory = await prisma.dormitory.create({
-    data: { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities: JSON.stringify(amenities || []), phoneNumber, email },
+    data: { name, address, region, totalRooms, totalCapacity, genderRestriction, amenities: JSON.stringify(amenities || []), phoneNumber, email, managerId: managerId || null },
   });
 
   await logAudit(req.user.id, 'CREATE', 'Dormitory', dormitory.id, {

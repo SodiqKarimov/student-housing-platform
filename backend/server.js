@@ -81,6 +81,9 @@ app.use(maskSensitiveData);
 // Trust proxy (Nginx orqasida)
 app.set('trust proxy', 1);
 
+// Statik fayllar (avatar rasmlari)
+app.use('/uploads', express.static('uploads'));
+
 // ========================
 // API Routes
 // ========================

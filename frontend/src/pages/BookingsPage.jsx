@@ -22,7 +22,7 @@ export default function BookingsPage() {
     setLoading(true);
     dormitoryApi.getBookings({ page, limit: 15, status: filterStatus || undefined })
       .then(({ data }) => {
-        setBookings(data.data?.data || []);
+        setBookings(data.data?.items || []);
         setTotal(data.data?.total || 0);
       })
       .finally(() => setLoading(false));

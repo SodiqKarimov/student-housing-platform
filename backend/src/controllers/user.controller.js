@@ -50,7 +50,7 @@ exports.getAllUsers = async (req, res) => {
 
 // Yangi xodim/admin yaratish (SUPER_ADMIN uchun)
 exports.createUser = async (req, res) => {
-  const { firstName, lastName, middleName, email, phone, role, pinfl } = req.body;
+  const { firstName, lastName, middleName, email, phone, role, pinfl, dormitoryId } = req.body;
 
   if (!firstName || !lastName || !email || !role) {
     return error(res, "Ism, familiya, email va rol majburiy", 400);
@@ -80,6 +80,13 @@ exports.createUser = async (req, res) => {
       email: true, phone: true, role: true, status: true, createdAt: true,
     },
   });
+
+  if (role === 'ADMIN' && dormitoryId) {
+    await prisma.dormitory.update({
+      where: { id: dormitoryId },
+      data: { managerId: user.id },
+    });
+  }
 
   await logAudit(req.user.id, 'CREATE', 'User', user.id, {
     newValues: { email, role },
