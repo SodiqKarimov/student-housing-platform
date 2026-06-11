@@ -136,6 +136,7 @@ export const profileApi = {
   get: () => api.get('/profile'),
   update: (data) => api.put('/profile', data),
   changePassword: (data) => api.post('/profile/change-password', data),
+  getAuditLogs: (params) => api.get('/profile/audit-logs', { params }),
   uploadAvatar: (file) => {
     const form = new FormData();
     form.append('avatar', file);

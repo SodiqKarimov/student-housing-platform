@@ -3,7 +3,14 @@ import { profileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_LABELS = {
-  SUPER_ADMIN: 'Super Admin', ADMIN: 'Administrator', DEAN_OFFICE: 'Dekanat', DORMITORY_STAFF: 'TTJ xodimi', STUDENT: 'Talaba',
+  SUPER_ADMIN: 'Super Admin', ADMIN: 'Administrator', DEAN_OFFICE: 'Dekanat',
+  DORMITORY_STAFF: 'TTJ xodimi', TUTOR: 'Tyutor', STUDENT: 'Talaba',
+};
+
+const ACTION_LABELS = {
+  LOGIN: 'Tizimga kirish', LOGOUT: 'Tizimdan chiqish',
+  CREATE: 'Yaratish', UPDATE: 'Yangilash', DELETE: "O'chirish",
+  APPROVE: 'Tasdiqlash', REJECT: 'Rad etish', VIEW_PERSONAL_DATA: "Ma'lumot ko'rish",
 };
 
 export default function ProfilePage() {
@@ -17,6 +24,10 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
@@ -37,6 +48,21 @@ export default function ProfilePage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const loadAuditLogs = async (page = 1) => {
+    setAuditLoading(true);
+    try {
+      const r = await profileApi.getAuditLogs({ page, limit: 15 });
+      setAuditLogs(r.data.data?.items || []);
+      setAuditTotal(r.data.data?.total || 0);
+      setAuditPage(page);
+    } catch {}
+    setAuditLoading(false);
+  };
+
+  useEffect(() => {
+    if (tab === 'audit') loadAuditLogs(1);
+  }, [tab]);
 
   const handleSaveProfile = async () => {
     setLoading(true); setMsg(''); setErr('');
@@ -100,7 +126,7 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', borderBottom: '2px solid #e5e7eb', marginBottom: '24px' }}>
-        {[{ id: 'info', label: 'Ma\'lumotlar' }, { id: 'password', label: 'Parol o\'zgartirish' }].map(t => (
+        {[{ id: 'info', label: 'Ma\'lumotlar' }, { id: 'password', label: 'Parol o\'zgartirish' }, { id: 'audit', label: 'Amallar tarixi' }].map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setMsg(''); setErr(''); }}
             style={{
               padding: '10px 20px', border: 'none', cursor: 'pointer', background: 'transparent',
@@ -187,6 +213,38 @@ export default function ProfilePage() {
                 style={{ padding: '10px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
                 Tahrirlash
               </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {tab === 'audit' && (
+        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600, color: '#1a3a6b' }}>Mening amallarim tarixi</h3>
+          {auditLoading ? (
+            <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>Yuklanmoqda...</div>
+          ) : auditLogs.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>Amallar tarixi topilmadi</div>
+          ) : (
+            <>
+              {auditLogs.map(log => (
+                <div key={log.id} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1.5fr', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f4f6', alignItems: 'start' }}>
+                  <div>
+                    <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: log.action === 'LOGIN' ? '#dbeafe' : log.action === 'DELETE' ? '#fee2e2' : log.action === 'CREATE' ? '#dcfce7' : '#f3f4f6', color: log.action === 'LOGIN' ? '#1d4ed8' : log.action === 'DELETE' ? '#dc2626' : log.action === 'CREATE' ? '#16a34a' : '#374151' }}>
+                      {ACTION_LABELS[log.action] || log.action}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#374151' }}>{log.description || `${log.entity} ${log.entityId ? `(${log.entityId.slice(0,8)}...)` : ''}`}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', textAlign: 'right' }}>{new Date(log.createdAt).toLocaleString('uz-UZ')}</div>
+                </div>
+              ))}
+              {auditTotal > 15 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+                  <button onClick={() => loadAuditLogs(auditPage - 1)} disabled={auditPage === 1} style={{ padding: '6px 16px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: auditPage === 1 ? 'default' : 'pointer', opacity: auditPage === 1 ? 0.5 : 1 }}>← Oldingi</button>
+                  <span style={{ fontSize: 13, color: '#555', alignSelf: 'center' }}>{auditPage} / {Math.ceil(auditTotal / 15)}</span>
+                  <button onClick={() => loadAuditLogs(auditPage + 1)} disabled={auditPage >= Math.ceil(auditTotal / 15)} style={{ padding: '6px 16px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: auditPage >= Math.ceil(auditTotal / 15) ? 'default' : 'pointer', opacity: auditPage >= Math.ceil(auditTotal / 15) ? 0.5 : 1 }}>Keyingi →</button>
+                </div>
+              )}
             </>
           )}
         </div>

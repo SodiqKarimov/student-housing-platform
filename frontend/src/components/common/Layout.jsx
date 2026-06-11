@@ -6,8 +6,8 @@ const navItems = [
   { path: '/dashboard', label: 'Bosh sahifa', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
   { path: '/students', label: 'Talabalar', icon: '👨‍🎓', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/dormitories', label: 'Yotoqxonalar', icon: '🏢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE', 'TUTOR'] },
-  { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'DEAN_OFFICE'] },
-  { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'DEAN_OFFICE'] },
+  { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'DEAN_OFFICE', 'TUTOR'] },
+  { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'DEAN_OFFICE', 'TUTOR'] },
   { path: '/green-mode', label: 'Yashil rejim', icon: '🟢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/face-id', label: 'Face ID', icon: '🎥', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
@@ -29,6 +29,7 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const visibleNav = navItems.filter(item => item.roles.includes(user?.role));
 
@@ -71,11 +72,32 @@ export default function Layout({ children }) {
               <div style={styles.userRole}>{ROLE_LABELS[user?.role]}</div>
             </div>
           )}
-          <button onClick={logout} style={styles.logoutBtn} title="Chiqish">
+          <button onClick={() => setShowLogoutConfirm(true)} style={styles.logoutBtn} title="Chiqish">
             🚪
           </button>
         </div>
       </aside>
+
+      {/* Chiqish tasdiqlash modali */}
+      {showLogoutConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 360, width: '90%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🚪</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a3a6b', margin: '0 0 8px' }}>Tizimdan chiqish</h2>
+            <p style={{ color: '#666', fontSize: 14, margin: '0 0 24px' }}>Haqiqatan ham tizimdan chiqmoqchimisiz? Barcha ochiq sessiyalar yopiladi.</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: '1px solid #ddd', background: '#f5f5f5', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+              >Bekor qilish</button>
+              <button
+                onClick={logout}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+              >Chiqish</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Asosiy kontent */}
       <main style={styles.main}>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { studentApi, dormitoryApi, rentalApi, commuterApi } from '../services/api';
+import { studentApi, dormitoryApi } from '../services/api';
 
 const COLORS = {
   DORMITORY: '#1a3a6b',
@@ -16,20 +17,26 @@ const LABELS = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [bookingStats, setBookingStats] = useState(null);
+  const [dorms, setDorms] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === 'ADMIN';
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const canArchive = isSuperAdmin || isAdmin;
 
   useEffect(() => {
     Promise.all([
       studentApi.getHousingStats(),
       dormitoryApi.getBookings({ status: 'PENDING', limit: 5 }),
+      ...(canArchive ? [dormitoryApi.getAll({ limit: 50 })] : []),
     ])
-      .then(([{ data: housingData }, { data: bookingsData }]) => {
+      .then(([{ data: housingData }, { data: bookingsData }, dormsRes]) => {
         setStats(housingData.data);
         setBookingStats(bookingsData.data?.items || []);
+        if (dormsRes) setDorms(dormsRes.data.data?.items || []);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -118,13 +125,16 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Fakultet bo'yicha statistika */}
+      {/* Fakultet bo'yicha statistika — ADMIN uchun faqat DORMITORY */}
       {stats?.byFaculty?.length > 0 && (
         <div style={styles.section}>
           <h2 style={styles.sectionTitle}>Fakultetlar bo'yicha yashash holati</h2>
           <div style={styles.facultyGrid}>
             {[...new Set(stats.byFaculty.map(f => f.faculty))].slice(0, 6).map((faculty) => {
-              const items = stats.byFaculty.filter(f => f.faculty === faculty);
+              const items = stats.byFaculty
+                .filter(f => f.faculty === faculty)
+                .filter(f => !isAdmin || f.housingType === 'DORMITORY');
+              if (items.length === 0) return null;
               const total = items.reduce((s, i) => s + i._count._all, 0);
               return (
                 <div key={faculty} style={styles.facultyCard}>
@@ -139,6 +149,28 @@ export default function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Arxiv bo'limi — faqat SUPER_ADMIN va ADMIN */}
+      {canArchive && dorms.length > 0 && (
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Yotoqxona arxivlari</h2>
+          <p style={{ color: '#888', fontSize: 13, margin: '0 0 16px' }}>Yil yakunida talabalar ma'lumotlarini arxivlash uchun tegishli yotoqxonani tanlang.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+            {dorms.map(d => (
+              <div key={d.id} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#1a3a6b' }}>{d.name}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>{d.currentOccupancy} ta faol talaba</div>
+                <button
+                  onClick={() => navigate('/dormitories')}
+                  style={{ padding: '7px 0', background: '#e8f5e9', color: '#2e7d32', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                >
+                  Arxivlash →
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -114,11 +114,13 @@ export default function GreenModePage() {
     } catch (e) { alert(e.response?.data?.message || 'Xato'); }
   };
 
+  const canManage = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+
   const TABS = [
     { id: TAB_VIOLATIONS, label: 'Qoidabuzarliklar' },
     { id: TAB_LOGS, label: 'Kirish/Chiqish tarixi' },
     { id: TAB_EXCEPTIONS, label: 'Istisnolar' },
-    { id: TAB_SETTINGS, label: 'Sozlamalar' },
+    ...(canManage ? [{ id: TAB_SETTINGS, label: 'Sozlamalar' }] : []),
   ];
 
   return (
@@ -167,22 +169,22 @@ export default function GreenModePage() {
           >{t.label}</button>
         ))}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', paddingBottom: '8px' }}>
-          <button
-            onClick={() => setShowAddLog(true)}
-            style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}
-          >
-            + Hodisa qo'shish
-          </button>
-          {user?.role === 'SUPER_ADMIN' && (
+        {canManage && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', paddingBottom: '8px' }}>
+            <button
+              onClick={() => setShowAddLog(true)}
+              style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}
+            >
+              + Hodisa qo'shish
+            </button>
             <button
               onClick={() => setShowExcModal(true)}
               style={{ padding: '8px 16px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}
             >
               + Istisno berish
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}

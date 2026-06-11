@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { studentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const TABS = [
+const ALL_TABS = [
   { key: 'DORMITORY', label: 'Yotoqxonada' },
   { key: 'RENTAL', label: 'Ijarada' },
   { key: 'COMMUTER', label: "Qatnab o'quvchilar" },
@@ -36,6 +36,7 @@ export default function StudentsPage() {
   const fileInputRef = useRef(null);
 
   const canEdit = ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'].includes(user?.role);
+  const TABS = user?.role === 'ADMIN' ? ALL_TABS.filter(t => t.key === 'DORMITORY') : ALL_TABS;
 
   const load = useCallback(() => {
     setLoading(true);
