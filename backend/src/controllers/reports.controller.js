@@ -13,10 +13,15 @@ function sendExcel(res, wb, filename) {
 // Talabalar ro'yxati
 exports.studentsReport = async (req, res) => {
   const { housingType, faculty } = req.query;
+  const isStaff = req.user.role === 'DORMITORY_STAFF';
   const where = {
     user: { deletedAt: null },
     ...(housingType && { housingType }),
-    ...(faculty && { faculty: { contains: faculty, mode: 'insensitive' } }),
+    ...(faculty && { faculty: { contains: faculty } }),
+    ...(isStaff && {
+      housingType: 'DORMITORY',
+      dormitoryBookings: { some: { dormitoryId: req.user.staffDormitoryId, status: 'ACTIVE' } },
+    }),
   };
 
   const students = await prisma.student.findMany({
@@ -53,7 +58,9 @@ exports.studentsReport = async (req, res) => {
 
 // TTJ statistikasi
 exports.dormitoriesReport = async (req, res) => {
+  const isStaff = req.user.role === 'DORMITORY_STAFF';
   const dormitories = await prisma.dormitory.findMany({
+    where: isStaff ? { id: req.user.staffDormitoryId } : undefined,
     include: {
       _count: { select: { rooms: true, bookings: { where: { status: 'ACTIVE' } } } },
     },
@@ -115,7 +122,9 @@ exports.rentalsReport = async (req, res) => {
 
 // Yashil rejim qoidabuzarliklari
 exports.violationsReport = async (req, res) => {
+  const isStaff = req.user.role === 'DORMITORY_STAFF';
   const violations = await prisma.greenModeViolation.findMany({
+    where: isStaff ? { dormitoryId: req.user.staffDormitoryId } : undefined,
     include: {
       student: { include: { user: { select: { firstName: true, lastName: true } } } },
       dormitory: { select: { name: true } },
@@ -180,7 +189,11 @@ exports.auditReport = async (req, res) => {
 // Face ID hisoboti
 exports.faceIdReport = async (req, res) => {
   const { date } = req.query;
-  const where = date ? { eventTime: { gte: new Date(date), lt: new Date(new Date(date).getTime() + 86400000) } } : {};
+  const isStaff = req.user.role === 'DORMITORY_STAFF';
+  const where = {
+    ...(date && { eventTime: { gte: new Date(date), lt: new Date(new Date(date).getTime() + 86400000) } }),
+    ...(isStaff && { dormitoryId: req.user.staffDormitoryId }),
+  };
 
   const events = await prisma.faceIdEvent.findMany({
     where,

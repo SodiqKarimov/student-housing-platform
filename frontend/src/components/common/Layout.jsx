@@ -11,7 +11,7 @@ const navItems = [
   { path: '/green-mode', label: 'Yashil rejim', icon: '🟢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/face-id', label: 'Face ID', icon: '🎥', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
-  { path: '/reports', label: 'Hisobotlar', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
+  { path: '/reports', label: 'Hisobotlar', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF'] },
   { path: '/users', label: 'Foydalanuvchilar', icon: '👥', roles: ['SUPER_ADMIN'] },
   { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
 ];
