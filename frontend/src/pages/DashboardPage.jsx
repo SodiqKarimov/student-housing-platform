@@ -27,7 +27,7 @@ export default function DashboardPage() {
     ])
       .then(([{ data: housingData }, { data: bookingsData }]) => {
         setStats(housingData.data);
-        setBookingStats(bookingsData.data);
+        setBookingStats(bookingsData.data?.items || []);
       })
       .finally(() => setLoading(false));
   }, []);
