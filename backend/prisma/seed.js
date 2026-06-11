@@ -1,8 +1,34 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seed ma\'lumotlari qo\'shilmoqda...');
+
+  // Super Admin yaratish (email/parol bilan kirish uchun)
+  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'admin@university.uz';
+  const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'Admin@TTJ2024';
+  const existing = await prisma.user.findFirst({ where: { email: SUPER_ADMIN_EMAIL } });
+  if (!existing) {
+    const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 10);
+    await prisma.user.create({
+      data: {
+        firstName: 'Super',
+        lastName: 'Admin',
+        email: SUPER_ADMIN_EMAIL,
+        role: 'SUPER_ADMIN',
+        status: 'ACTIVE',
+        passwordHash,
+      },
+    });
+    console.log(`✅ Super Admin yaratildi: ${SUPER_ADMIN_EMAIL}`);
+  } else if (!existing.passwordHash) {
+    const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 10);
+    await prisma.user.update({ where: { id: existing.id }, data: { passwordHash } });
+    console.log(`✅ Super Admin paroli yangilandi: ${SUPER_ADMIN_EMAIL}`);
+  } else {
+    console.log(`ℹ️  Super Admin allaqachon mavjud: ${SUPER_ADMIN_EMAIL}`);
+  }
 
   // Yotoqxonalar
   const dorm1 = await prisma.dormitory.upsert({

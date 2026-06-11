@@ -9,5 +9,6 @@ router.get('/', userController.getAllUsers);
 router.post('/', userController.createUser);
 router.put('/:id', userController.updateUser);
 router.patch('/:id/toggle-status', userController.toggleStatus);
+router.post('/:id/reset-password', userController.resetPassword);
 
 module.exports = router;

@@ -3,11 +3,14 @@
 
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { prisma } = require('../config/database');
 const oneIdMock = require('../services/mock/oneid.mock');
 const hemisMock = require('../services/mock/hemis.mock');
 const { success, error } = require('../utils/response');
+
+const SUPER_ADMIN_DEFAULT_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'Admin@TTJ2024';
 
 // Mock foydalanuvchilar ro'yxatini ko'rsatuvchi HTML sahifa
 router.get('/mock-login', (req, res) => {
@@ -139,8 +142,12 @@ router.post('/mock-auth', async (req, res) => {
         },
       });
     } else {
-      user = await prisma.user.create({ data: userData });
+      const passwordHash = await bcrypt.hash(SUPER_ADMIN_DEFAULT_PASSWORD, 10);
+      user = await prisma.user.create({ data: { ...userData, passwordHash } });
     }
+  } else if (!user.passwordHash) {
+    const passwordHash = await bcrypt.hash(SUPER_ADMIN_DEFAULT_PASSWORD, 10);
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
   }
 
   const accessToken = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });

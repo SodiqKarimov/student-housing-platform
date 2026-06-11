@@ -15,6 +15,13 @@ const ROLE_COLORS = {
 
 const EMPTY_FORM = { firstName: '', lastName: '', middleName: '', email: '', phone: '', role: 'DEAN_OFFICE', pinfl: '', dormitoryId: '' };
 
+const autoEmail = (firstName, lastName) => {
+  if (!firstName || !lastName) return '';
+  const f = firstName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+  const l = lastName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+  return `${f}.${l}@ttj.uz`;
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
@@ -29,6 +36,7 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [createdInfo, setCreatedInfo] = useState(null);
   const [dormitories, setDormitories] = useState([]);
+  const [resetInfo, setResetInfo] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -73,6 +81,16 @@ export default function UsersPage() {
     } finally { setSaving(false); }
   };
 
+  const handleResetPassword = async (u) => {
+    if (!window.confirm(`${u.firstName} ${u.lastName} uchun parolni tiklaysizmi?`)) return;
+    try {
+      const { data } = await userApi.resetPassword(u.id);
+      setResetInfo(data.data);
+    } catch (e) {
+      alert(e.response?.data?.message || 'Xato yuz berdi');
+    }
+  };
+
   const handleToggle = async (u) => {
     if (!window.confirm(`${u.firstName} ${u.lastName}ni ${u.status === 'ACTIVE' ? 'bloklaysizmi' : 'faollashtirasizmi'}?`)) return;
     try {
@@ -83,7 +101,17 @@ export default function UsersPage() {
     }
   };
 
-  const f = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const f = (k, v) => {
+    setForm(p => {
+      const updated = { ...p, [k]: v };
+      if (k === 'email') {
+        updated._emailManual = true;
+      } else if ((k === 'firstName' || k === 'lastName') && !p._emailManual) {
+        updated.email = autoEmail(k === 'firstName' ? v : p.firstName, k === 'lastName' ? v : p.lastName);
+      }
+      return updated;
+    });
+  };
   const totalPages = Math.ceil(total / 15);
 
   return (
@@ -134,9 +162,10 @@ export default function UsersPage() {
                   <span style={{ fontSize: 12, color: '#888' }}>
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('uz-UZ') : 'Hali kirmagan'}
                   </span>
-                  <span style={{ display: 'flex', gap: 6 }}>
+                  <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {u.role !== 'SUPER_ADMIN' && <>
                       <button onClick={() => openEdit(u)} style={s.btnEdit}>Tahrirlash</button>
+                      <button onClick={() => handleResetPassword(u)} style={{ ...s.btnEdit, background: '#fff8e1', color: '#b07a00' }}>🔑 Parol</button>
                       <button onClick={() => handleToggle(u)} style={{ ...s.btnEdit, background: u.status === 'ACTIVE' ? '#fff0f0' : '#e8f5e9', color: u.status === 'ACTIVE' ? '#c0392b' : '#2e7d32' }}>
                         {u.status === 'ACTIVE' ? 'Bloklash' : 'Faollashtirish'}
                       </button>
@@ -153,6 +182,28 @@ export default function UsersPage() {
           <button style={s.pageBtn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Oldingi</button>
           <span style={{ color: '#555', fontSize: 14 }}>{page} / {totalPages}</span>
           <button style={s.pageBtn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Keyingi →</button>
+        </div>
+      )}
+
+      {/* Parol tiklash natijasi */}
+      {resetInfo && (
+        <div style={s.overlay} onClick={() => setResetInfo(null)}>
+          <div style={{ ...s.modal, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHead}>
+              <h2 style={s.modalTitle}>🔑 Parol tiklandi</h2>
+              <button onClick={() => setResetInfo(null)} style={s.closeBtn}>✕</button>
+            </div>
+            <div style={{ padding: 24 }}>
+              <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <div style={{ fontSize: 13, color: '#b07a00', marginBottom: 8, fontWeight: 600 }}>Xodim login ma'lumotlari:</div>
+                <div style={{ fontSize: 14, color: '#333', marginBottom: 6 }}><b>Email (login):</b> <code style={{ background: '#e8f0fe', padding: '2px 8px', borderRadius: 4 }}>{resetInfo.email}</code></div>
+                <div style={{ fontSize: 13, color: '#b07a00', marginTop: 12, marginBottom: 6, fontWeight: 600 }}>Yangi vaqtinchalik parol:</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#1a3a6b', letterSpacing: 2, background: '#f0f4ff', padding: 12, borderRadius: 8, textAlign: 'center' }}>{resetInfo.tempPassword}</div>
+                <div style={{ fontSize: 11, color: '#888', marginTop: 10 }}>Eski sessiyalar tugatildi. Xodim bu parol bilan kirib, profilidan o'zgartirishi kerak.</div>
+              </div>
+              <button onClick={() => setResetInfo(null)} style={{ ...s.btnPrimary, width: '100%' }}>Yopish</button>
+            </div>
+          </div>
         </div>
       )}
 

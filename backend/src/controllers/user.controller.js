@@ -21,9 +21,9 @@ exports.getAllUsers = async (req, res) => {
     deletedAt: null,
     ...(search && {
       OR: [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search } },
+        { lastName: { contains: search } },
+        { email: { contains: search } },
       ],
     }),
     ...(role && { role }),
@@ -122,6 +122,27 @@ exports.updateUser = async (req, res) => {
   });
 
   return success(res, updated, "Ma'lumotlar yangilandi");
+};
+
+// Parolni tiklash (Super Admin uchun)
+exports.resetPassword = async (req, res) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return error(res, 'Foydalanuvchi topilmadi', 404);
+  if (user.role === 'SUPER_ADMIN') return error(res, "Super admin parolini bu usulda tiklash mumkin emas", 403);
+
+  const newPassword = `Ttj_${uuidv4().slice(0, 8)}`;
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.user.update({ where: { id }, data: { passwordHash } });
+  await prisma.userSession.deleteMany({ where: { userId: id } });
+
+  await logAudit(req.user.id, 'UPDATE', 'User', id, {
+    description: `Foydalanuvchi paroli tiklandi: ${user.email}`,
+  });
+
+  return success(res, { tempPassword: newPassword, email: user.email }, 'Parol muvaffaqiyatli tiklandi');
 };
 
 // Foydalanuvchi statusini o'zgartirish (faollashtirish/bloklash)

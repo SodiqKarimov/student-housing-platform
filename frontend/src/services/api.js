@@ -60,6 +60,7 @@ export const userApi = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
+  resetPassword: (id) => api.post(`/users/${id}/reset-password`),
 };
 
 export const dormitoryApi = {
