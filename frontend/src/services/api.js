@@ -68,12 +68,17 @@ export const dormitoryApi = {
   getById: (id) => api.get(`/dormitories/${id}`),
   create: (data) => api.post('/dormitories', data),
   update: (id, data) => api.put(`/dormitories/${id}`, data),
+  delete: (id) => api.delete(`/dormitories/${id}`),
   getRooms: (dormId, params) => api.get(`/dormitories/${dormId}/rooms`, { params }),
   createRoom: (dormId, data) => api.post(`/dormitories/${dormId}/rooms`, data),
   getRoomStudents: (roomId) => api.get(`/dormitories/rooms/${roomId}/students`),
   getBookings: (params) => api.get('/dormitories/bookings', { params }),
   createBooking: (data) => api.post('/dormitories/bookings', data),
   reviewBooking: (id, data) => api.patch(`/dormitories/bookings/${id}/review`, data),
+  getReport: (dormId) => api.get(`/dormitories/${dormId}/report`),
+  archive: (dormId, data) => api.post(`/dormitories/${dormId}/archive`, data),
+  getArchives: (dormId) => api.get(`/dormitories/${dormId}/archives`),
+  getArchiveDetail: (archiveId) => api.get(`/dormitories/archives/${archiveId}`),
 };
 
 export const rentalApi = {

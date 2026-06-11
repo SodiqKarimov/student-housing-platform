@@ -11,6 +11,7 @@ exports.getAllDormitories = async (req, res) => {
     ...(region && { region: { contains: region } }),
     ...(status && { status }),
     ...(req.user.role === 'ADMIN' && { managerId: req.user.id }),
+    ...(req.user.role === 'DORMITORY_STAFF' && req.user.staffDormitoryId && { id: req.user.staffDormitoryId }),
   };
 
   const [dormitories, total] = await Promise.all([
@@ -223,6 +224,138 @@ exports.getRoomStudents = async (req, res) => {
     },
   });
   return success(res, students);
+};
+
+// Yotoqxona yangilash
+exports.updateDormitory = async (req, res) => {
+  const { id } = req.params;
+  const { name, address, region, totalRooms, totalCapacity, genderRestriction, phoneNumber, floors } = req.body;
+
+  const existing = await prisma.dormitory.findUnique({ where: { id } });
+  if (!existing) return error(res, 'Yotoqxona topilmadi', 404);
+
+  const updated = await prisma.dormitory.update({
+    where: { id },
+    data: { name, address, region, totalRooms, totalCapacity, genderRestriction, phoneNumber, floors },
+  });
+
+  await logAudit(req.user.id, 'UPDATE', 'Dormitory', id, {
+    description: 'Yotoqxona yangilandi',
+  });
+
+  return success(res, updated, 'Yotoqxona yangilandi');
+};
+
+// Yotoqxona o'chirish
+exports.deleteDormitory = async (req, res) => {
+  const { id } = req.params;
+
+  const existing = await prisma.dormitory.findUnique({ where: { id } });
+  if (!existing) return error(res, 'Yotoqxona topilmadi', 404);
+
+  const activeBookings = await prisma.dormitoryBooking.count({ where: { dormitoryId: id, status: 'ACTIVE' } });
+  if (activeBookings > 0) {
+    return error(res, `Bu yotoqxonada ${activeBookings} ta faol talaba bor. Avval ularni chiqaring.`, 400);
+  }
+
+  await prisma.dormitory.delete({ where: { id } });
+
+  await logAudit(req.user.id, 'DELETE', 'Dormitory', id, {
+    description: "Yotoqxona o'chirildi",
+  });
+
+  return success(res, null, "Yotoqxona o'chirildi");
+};
+
+// Yotoqxona hisoboti (DORMITORY_STAFF faqat o'z yotoqxonasini ko'ra oladi)
+exports.getDormitoryReport = async (req, res) => {
+  const { dormId } = req.params;
+
+  if (req.user.role === 'DORMITORY_STAFF' && req.user.staffDormitoryId !== dormId) {
+    return error(res, "Ruxsat yo'q", 403);
+  }
+
+  const dormitory = await prisma.dormitory.findUnique({
+    where: { id: dormId },
+    include: {
+      rooms: {
+        include: {
+          bookings: {
+            where: { status: 'ACTIVE' },
+            include: {
+              student: {
+                include: {
+                  user: { select: { firstName: true, lastName: true, middleName: true, phone: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!dormitory) return error(res, 'Yotoqxona topilmadi', 404);
+  return success(res, dormitory);
+};
+
+// Arxivlash
+exports.archiveDormitory = async (req, res) => {
+  const { dormId } = req.params;
+  const { academicYear } = req.body;
+
+  if (!academicYear) return error(res, "Akademik yil talab qilinadi (masalan: 2024-2025)", 400);
+
+  const dormitory = await prisma.dormitory.findUnique({ where: { id: dormId } });
+  if (!dormitory) return error(res, 'Yotoqxona topilmadi', 404);
+
+  const bookings = await prisma.dormitoryBooking.findMany({
+    where: { dormitoryId: dormId },
+    include: {
+      student: {
+        include: {
+          user: { select: { firstName: true, lastName: true, middleName: true, phone: true, email: true } },
+        },
+      },
+      room: { select: { roomNumber: true, floor: true, type: true } },
+    },
+  });
+
+  const archiveData = JSON.stringify(bookings);
+  const archive = await prisma.studentArchive.create({
+    data: {
+      dormitoryId: dormId,
+      academicYear,
+      archivedBy: req.user.id,
+      data: archiveData,
+      totalStudents: bookings.length,
+    },
+  });
+
+  await logAudit(req.user.id, 'CREATE', 'StudentArchive', archive.id, {
+    description: `${academicYear} yili arxivlandi`,
+  });
+
+  return success(res, { archiveId: archive.id, totalStudents: bookings.length, academicYear }, 'Arxivlash muvaffaqiyatli');
+};
+
+// Arxivlar ro'yxati
+exports.getArchives = async (req, res) => {
+  const { dormId } = req.params;
+  const archives = await prisma.studentArchive.findMany({
+    where: { dormitoryId: dormId },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, academicYear: true, archivedAt: true, totalStudents: true, archivedBy: true, createdAt: true },
+  });
+  return success(res, archives);
+};
+
+// Arxiv tafsiloti
+exports.getArchiveDetail = async (req, res) => {
+  const { archiveId } = req.params;
+  const archive = await prisma.studentArchive.findUnique({ where: { id: archiveId } });
+  if (!archive) return error(res, 'Arxiv topilmadi', 404);
+  return success(res, { ...archive, data: JSON.parse(archive.data) });
 };
 
 // Bronlar ro'yxati

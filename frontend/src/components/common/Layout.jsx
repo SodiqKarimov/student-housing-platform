@@ -3,17 +3,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
-  { path: '/dashboard', label: 'Bosh sahifa', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'STUDENT'] },
+  { path: '/dashboard', label: 'Bosh sahifa', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
   { path: '/students', label: 'Talabalar', icon: '👨‍🎓', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
-  { path: '/dormitories', label: 'Yotoqxonalar', icon: '🏢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
-  { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
-  { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
+  { path: '/dormitories', label: 'Yotoqxonalar', icon: '🏢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE', 'TUTOR'] },
+  { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'DEAN_OFFICE'] },
+  { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'DEAN_OFFICE'] },
   { path: '/green-mode', label: 'Yashil rejim', icon: '🟢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/face-id', label: 'Face ID', icon: '🎥', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
   { path: '/reports', label: 'Hisobotlar', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/users', label: 'Foydalanuvchilar', icon: '👥', roles: ['SUPER_ADMIN'] },
-  { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'STUDENT'] },
+  { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
 ];
 
 const ROLE_LABELS = {
@@ -21,6 +21,7 @@ const ROLE_LABELS = {
   ADMIN: 'Yotoqxona boshlig\'i',
   DEAN_OFFICE: 'Dekanat xodimi',
   DORMITORY_STAFF: 'Yotoqxona xodimi',
+  TUTOR: 'Tyutor',
   STUDENT: 'Talaba',
 };
 

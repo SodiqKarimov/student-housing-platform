@@ -12,6 +12,7 @@ export default function CommutersPage() {
   const [search, setSearch] = useState('');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
 
   const load = async () => {
     try {
@@ -85,7 +86,11 @@ export default function CommutersPage() {
             </thead>
             <tbody>
               {commuters.map((c, i) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                <tr
+                  key={c.id}
+                  onClick={() => setDetailItem(c)}
+                  style={{ borderBottom: '1px solid #f3f4f6', background: i % 2 === 0 ? 'white' : '#fafafa', cursor: 'pointer' }}
+                >
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ fontWeight: 500 }}>{c.student?.user?.lastName} {c.student?.user?.firstName}</div>
                     <div style={{ fontSize: '12px', color: '#6b7280' }}>{c.student?.faculty}</div>
@@ -106,6 +111,42 @@ export default function CommutersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {detailItem && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }} onClick={() => setDetailItem(null)}>
+          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #eee', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1a3a6b' }}>Talaba tafsilotlari</h2>
+              <button onClick={() => setDetailItem(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888', padding: 4 }}>X</button>
+            </div>
+            <div style={{ padding: 24 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#1a3a6b', marginBottom: 4 }}>
+                {detailItem.student?.user?.lastName} {detailItem.student?.user?.firstName} {detailItem.student?.user?.middleName}
+              </div>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>{detailItem.student?.faculty}</div>
+
+              {[
+                ['Telefon', detailItem.student?.user?.phone || '—'],
+                ['Ota-ona telefoni', detailItem.student?.parentPhone || '—'],
+                ['Viloyat', detailItem.region],
+                ['Tuman', detailItem.district],
+                ['Manzil', detailItem.address],
+                ['Masofa', `${detailItem.distanceKm} km`],
+                ["Yo'l vaqti", `${detailItem.travelTimeMin} daqiqa`],
+                ['Transport', TRANSPORT_LABELS[detailItem.transportType] || detailItem.transportType],
+                ["Ro'yxatdan o'tgan sana", detailItem.confirmedAt ? new Date(detailItem.confirmedAt).toLocaleDateString('uz-UZ') : '—'],
+                ['Nafaqa huquqi', detailItem.isEligibleForBenefit ? 'Ha' : "Yo'q"],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid #f5f5f5', fontSize: 14 }}>
+                  <span style={{ color: '#888', fontWeight: 500 }}>{label}</span>
+                  <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

@@ -17,12 +17,17 @@ export default function DormitoriesPage() {
   const [loading, setLoading] = useState(true);
 
   const [showDormModal, setShowDormModal] = useState(false);
+  const [editDormTarget, setEditDormTarget] = useState(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [dormForm, setDormForm] = useState(EMPTY_DORM);
   const [adminUsers, setAdminUsers] = useState([]);
   const [roomForm, setRoomForm] = useState(EMPTY_ROOM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Arxivlash
+  const [archives, setArchives] = useState([]);
+  const [showArchives, setShowArchives] = useState(false);
 
   // Xona tafsilotlari modali
   const [roomDetail, setRoomDetail] = useState(null);
@@ -36,6 +41,7 @@ export default function DormitoriesPage() {
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const canAddRoom = ['SUPER_ADMIN', 'ADMIN'].includes(user?.role);
+  const canArchive = ['SUPER_ADMIN', 'ADMIN'].includes(user?.role);
 
   const loadDorms = useCallback(() => {
     setLoading(true);
@@ -58,6 +64,7 @@ export default function DormitoriesPage() {
 
   const openDormModal = () => {
     setDormForm(EMPTY_DORM);
+    setEditDormTarget(null);
     setError('');
     setShowDormModal(true);
     userApi.getAll({ role: 'ADMIN', limit: 100 })
@@ -65,17 +72,75 @@ export default function DormitoriesPage() {
       .catch(() => {});
   };
 
+  const openEditDorm = (dorm) => {
+    setDormForm({
+      name: dorm.name || '',
+      address: dorm.address || '',
+      region: dorm.region || '',
+      floors: dorm.floors ? String(dorm.floors) : '',
+      totalRooms: String(dorm.totalRooms || ''),
+      totalCapacity: String(dorm.totalCapacity || ''),
+      genderRestriction: dorm.genderRestriction || '',
+      phoneNumber: dorm.phoneNumber || '',
+      managerId: dorm.managerId || '',
+    });
+    setEditDormTarget(dorm);
+    setError('');
+    setShowDormModal(true);
+    userApi.getAll({ role: 'ADMIN', limit: 100 })
+      .then(({ data }) => setAdminUsers(data.data?.items || []))
+      .catch(() => {});
+  };
+
+  const handleDeleteDorm = async (dorm) => {
+    if (!window.confirm(`"${dorm.name}" yotoqxonasini o'chirishni tasdiqlaysizmi?`)) return;
+    try {
+      await dormitoryApi.delete(dorm.id);
+      if (selected?.id === dorm.id) setSelected(null);
+      loadDorms();
+    } catch (e) {
+      alert(e.response?.data?.message || "O'chirishda xato yuz berdi");
+    }
+  };
+
+  const handleArchive = async (dorm) => {
+    const academicYear = window.prompt('Arxivlanadigan akademik yilni kiriting (masalan: 2024-2025):', '2024-2025');
+    if (!academicYear) return;
+    try {
+      const { data } = await dormitoryApi.archive(dorm.id, { academicYear });
+      alert(`Arxivlash muvaffaqiyatli! ${data.data?.totalStudents || 0} ta talaba arxivlandi.`);
+    } catch (e) {
+      alert(e.response?.data?.message || 'Arxivlashda xato yuz berdi');
+    }
+  };
+
+  const loadArchives = async (dorm) => {
+    try {
+      const { data } = await dormitoryApi.getArchives(dorm.id);
+      setArchives(data.data || []);
+      setShowArchives(true);
+    } catch {
+      setArchives([]);
+      setShowArchives(true);
+    }
+  };
+
   const saveDorm = async () => {
     setSaving(true); setError('');
     try {
-      await dormitoryApi.create({
+      const payload = {
         ...dormForm,
         floors: dormForm.floors ? parseInt(dormForm.floors) : null,
         totalRooms: parseInt(dormForm.totalRooms),
         totalCapacity: parseInt(dormForm.totalCapacity),
         genderRestriction: dormForm.genderRestriction || null,
         managerId: dormForm.managerId || null,
-      });
+      };
+      if (editDormTarget) {
+        await dormitoryApi.update(editDormTarget.id, payload);
+      } else {
+        await dormitoryApi.create(payload);
+      }
       setShowDormModal(false);
       loadDorms();
     } catch (e) {
@@ -201,6 +266,40 @@ export default function DormitoriesPage() {
                 <div style={s.occupancyBar}>
                   <div style={{ ...s.occupancyFill, width: `${d.totalCapacity > 0 ? (d.currentOccupancy / d.totalCapacity) * 100 : 0}%` }} />
                 </div>
+                {isSuperAdmin && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }} onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => openEditDorm(d)}
+                      style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: 'none', background: '#e8f0fe', color: '#1a3a6b', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                    >
+                      Tahrirlash
+                    </button>
+                    {canArchive && (
+                      <button
+                        onClick={() => handleArchive(d)}
+                        style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: 'none', background: '#e8f5e9', color: '#2e7d32', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                      >
+                        Arxivlash
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteDorm(d)}
+                      style={{ flex: 1, padding: '5px 0', borderRadius: 6, border: 'none', background: '#fff0f0', color: '#c0392b', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                    >
+                      O'chirish
+                    </button>
+                  </div>
+                )}
+                {canArchive && !isSuperAdmin && (
+                  <div style={{ marginTop: 8 }} onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleArchive(d)}
+                      style={{ width: '100%', padding: '5px 0', borderRadius: 6, border: 'none', background: '#e8f5e9', color: '#2e7d32', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                    >
+                      Arxivlash
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -264,12 +363,12 @@ export default function DormitoriesPage() {
         </div>
       </div>
 
-      {/* Yotoqxona qo'shish modali */}
+      {/* Yotoqxona qo'shish/tahrirlash modali */}
       {showDormModal && (
         <div style={s.overlay} onClick={() => setShowDormModal(false)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <div style={s.modalHead}>
-              <h2 style={s.modalTitle}>Yangi yotoqxona qo'shish</h2>
+              <h2 style={s.modalTitle}>{editDormTarget ? 'Yotoqxonani tahrirlash' : "Yangi yotoqxona qo'shish"}</h2>
               <button onClick={() => setShowDormModal(false)} style={s.closeBtn}>X</button>
             </div>
             <div style={s.formGrid}>
@@ -296,7 +395,7 @@ export default function DormitoriesPage() {
             <div style={s.modalFooter}>
               <button onClick={() => setShowDormModal(false)} style={s.btnSecondary}>Bekor qilish</button>
               <button onClick={saveDorm} disabled={saving} style={s.btnPrimary}>
-                {saving ? 'Saqlanmoqda...' : "Qo'shish"}
+                {saving ? 'Saqlanmoqda...' : (editDormTarget ? 'Saqlash' : "Qo'shish")}
               </button>
             </div>
           </div>
@@ -381,6 +480,34 @@ export default function DormitoriesPage() {
                   })
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Arxivlar modali */}
+      {showArchives && (
+        <div style={s.overlay} onClick={() => setShowArchives(false)}>
+          <div style={{ ...s.modal, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHead}>
+              <h2 style={s.modalTitle}>Arxivlar</h2>
+              <button onClick={() => setShowArchives(false)} style={s.closeBtn}>X</button>
+            </div>
+            <div style={{ padding: 24 }}>
+              {archives.length === 0 ? (
+                <div style={s.center}>Arxivlar topilmadi</div>
+              ) : (
+                archives.map(a => (
+                  <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#1a3a6b' }}>{a.academicYear}</div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                        {new Date(a.archivedAt).toLocaleDateString('uz-UZ')} — {a.totalStudents} ta talaba
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

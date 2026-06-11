@@ -23,6 +23,7 @@ async function authenticate(req, res, next) {
         status: true,
         firstName: true,
         lastName: true,
+        staffDormitoryId: true,
       },
     });
 

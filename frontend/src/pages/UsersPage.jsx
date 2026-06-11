@@ -6,11 +6,12 @@ const ROLE_LABELS = {
   ADMIN: "Yotoqxona boshlig'i",
   DEAN_OFFICE: 'Dekanat xodimi',
   DORMITORY_STAFF: 'Yotoqxona xodimi',
+  TUTOR: 'Tyutor',
   STUDENT: 'Talaba',
 };
 const ROLE_COLORS = {
   SUPER_ADMIN: '#1a3a6b', ADMIN: '#0d8f5c', DEAN_OFFICE: '#6b1a6b',
-  DORMITORY_STAFF: '#8f4d0d', STUDENT: '#555',
+  DORMITORY_STAFF: '#8f4d0d', TUTOR: '#2563eb', STUDENT: '#555',
 };
 
 const EMPTY_FORM = { firstName: '', lastName: '', middleName: '', email: '', phone: '', role: 'DEAN_OFFICE', pinfl: '', dormitoryId: '' };
@@ -132,6 +133,7 @@ export default function UsersPage() {
           <option value="ADMIN">Yotoqxona boshlig'i</option>
           <option value="DEAN_OFFICE">Dekanat xodimi</option>
           <option value="DORMITORY_STAFF">Yotoqxona xodimi</option>
+          <option value="TUTOR">Tyutor</option>
           <option value="STUDENT">Talaba</option>
         </select>
       </div>
@@ -241,9 +243,9 @@ export default function UsersPage() {
                   <Field label="Email *" value={form.email} onChange={v => f('email', v)} />
                   <Field label="Telefon" value={form.phone} onChange={v => f('phone', v)} placeholder="+998..." />
                   <SelectField label="Rol *" value={form.role} onChange={v => f('role', v)}
-                    options={[['ADMIN',"Yotoqxona boshlig'i"],['DEAN_OFFICE','Dekanat xodimi'],['DORMITORY_STAFF','Yotoqxona xodimi']]} />
+                    options={[['ADMIN',"Yotoqxona boshlig'i"],['DEAN_OFFICE','Dekanat xodimi'],['DORMITORY_STAFF','Yotoqxona xodimi'],['TUTOR','Tyutor']]} />
                   <Field label="PINFL (ixtiyoriy)" value={form.pinfl} onChange={v => f('pinfl', v)} placeholder="14 raqam" />
-                  {form.role === 'ADMIN' && (
+                  {(form.role === 'ADMIN' || form.role === 'DORMITORY_STAFF') && (
                     <div style={{ gridColumn: 'span 2' }}>
                       <label style={s.label}>Yotoqxona tayinlash</label>
                       <select value={form.dormitoryId} onChange={e => f('dormitoryId', e.target.value)} style={s.input}>

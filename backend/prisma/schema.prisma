@@ -14,33 +14,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// UserRole: SUPER_ADMIN | ADMIN | DEAN_OFFICE | DORMITORY_STAFF | STUDENT
+// UserRole: SUPER_ADMIN | ADMIN | DEAN_OFFICE | DORMITORY_STAFF | STUDENT | TUTOR
 // UserStatus: ACTIVE | INACTIVE | BLOCKED | PENDING_VERIFICATION
 
 model User {
-  id             String    @id @default(uuid())
-  oneIdSub       String?   @unique
-  hemisStudentId String?   @unique
-  pinfl          String?   @unique
-  firstName      String
-  lastName       String
-  middleName     String?
-  email          String    @unique
-  phone          String?
-  role           String    @default("STUDENT")
-  status         String    @default("PENDING_VERIFICATION")
-  passwordHash   String?
-  photoUrl       String?
-  lastLoginAt    DateTime?
-  lastLoginIp    String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
+  id                String    @id @default(uuid())
+  oneIdSub          String?   @unique
+  hemisStudentId    String?   @unique
+  pinfl             String?   @unique
+  firstName         String
+  lastName          String
+  middleName        String?
+  email             String    @unique
+  phone             String?
+  role              String    @default("STUDENT")
+  status            String    @default("PENDING_VERIFICATION")
+  passwordHash      String?
+  photoUrl          String?
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  staffDormitoryId  String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
-  student       Student?
-  auditLogs     AuditLog[]
-  sessions      UserSession[]
-  notifications Notification[]
+  student          Student?
+  auditLogs        AuditLog[]
+  sessions         UserSession[]
+  notifications    Notification[]
+  staffDormitory   Dormitory?     @relation("DormitoryStaff", fields: [staffDormitoryId], references: [id])
 
   @@index([email])
   @@map("users")
@@ -143,6 +145,8 @@ model Dormitory {
   greenModeViolations GreenModeViolation[]
   greenModeExceptions GreenModeException[]
   faceIdEvents        FaceIdEvent[]
+  staff               User[]             @relation("DormitoryStaff")
+  archives            StudentArchive[]
 
   @@map("dormitories")
 }
@@ -453,4 +457,24 @@ model Recommendation {
   student Student @relation(fields: [studentId], references: [id])
   @@index([studentId])
   @@map("recommendations")
+}
+
+// ================================================================
+// ARXIV
+// ================================================================
+
+model StudentArchive {
+  id            String    @id @default(uuid())
+  dormitoryId   String
+  academicYear  String
+  archivedAt    DateTime  @default(now())
+  archivedBy    String
+  data          String
+  totalStudents Int
+  createdAt     DateTime  @default(now())
+
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+
+  @@index([dormitoryId])
+  @@map("student_archives")
 }

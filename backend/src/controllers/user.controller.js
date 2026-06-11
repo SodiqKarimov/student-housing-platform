@@ -9,6 +9,7 @@ const ROLE_LABELS = {
   ADMIN: "Yotoqxona boshlig'i",
   DEAN_OFFICE: 'Dekanat xodimi',
   DORMITORY_STAFF: 'Yotoqxona xodimi',
+  TUTOR: 'Tyutor',
   STUDENT: 'Talaba',
 };
 
@@ -56,9 +57,9 @@ exports.createUser = async (req, res) => {
     return error(res, "Ism, familiya, email va rol majburiy", 400);
   }
 
-  const allowedRoles = ['ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF'];
+  const allowedRoles = ['ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR'];
   if (!allowedRoles.includes(role)) {
-    return error(res, "Noto'g'ri rol. ADMIN, DEAN_OFFICE yoki DORMITORY_STAFF bo'lishi kerak", 400);
+    return error(res, "Noto'g'ri rol. ADMIN, DEAN_OFFICE, DORMITORY_STAFF yoki TUTOR bo'lishi kerak", 400);
   }
 
   const existing = await prisma.user.findFirst({ where: { email } });
@@ -81,11 +82,12 @@ exports.createUser = async (req, res) => {
     },
   });
 
-  if (role === 'ADMIN' && dormitoryId) {
-    await prisma.dormitory.update({
-      where: { id: dormitoryId },
-      data: { managerId: user.id },
-    });
+  if (dormitoryId) {
+    if (role === 'ADMIN') {
+      await prisma.dormitory.update({ where: { id: dormitoryId }, data: { managerId: user.id } });
+    } else if (role === 'DORMITORY_STAFF') {
+      await prisma.user.update({ where: { id: user.id }, data: { staffDormitoryId: dormitoryId } });
+    }
   }
 
   await logAudit(req.user.id, 'CREATE', 'User', user.id, {

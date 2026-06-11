@@ -83,7 +83,7 @@ router.get('/mock-login', (req, res) => {
 });
 
 function getRoleLabel(role) {
-  const labels = { SUPER_ADMIN: 'Super Administrator', ADMIN: 'Yotoqxona boshlig\'i', DEAN_OFFICE: 'Dekanat xodimi', DORMITORY_STAFF: 'Yotoqxona xodimi', STUDENT: 'Talaba' };
+  const labels = { SUPER_ADMIN: 'Super Administrator', ADMIN: 'Yotoqxona boshlig\'i', DEAN_OFFICE: 'Dekanat xodimi', DORMITORY_STAFF: 'Yotoqxona xodimi', TUTOR: 'Tyutor', STUDENT: 'Talaba' };
   return labels[role] || role;
 }
 

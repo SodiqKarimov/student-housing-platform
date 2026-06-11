@@ -20,6 +20,8 @@ export default function DashboardPage() {
   const [bookingStats, setBookingStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isAdmin = user?.role === 'ADMIN';
+
   useEffect(() => {
     Promise.all([
       studentApi.getHousingStats(),
@@ -33,6 +35,10 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) return <div style={styles.loading}>Yuklanmoqda...</div>;
+
+  const housingTypesToShow = isAdmin
+    ? stats?.byHousingType?.filter(item => item.type === 'DORMITORY')
+    : stats?.byHousingType;
 
   return (
     <div style={styles.container}>
@@ -50,7 +56,7 @@ export default function DashboardPage() {
           <div style={styles.statLabel}>Jami talabalar</div>
         </div>
 
-        {stats?.byHousingType?.map((item) => (
+        {housingTypesToShow?.map((item) => (
           <div key={item.type} style={{ ...styles.statCard, borderTop: `4px solid ${COLORS[item.type] || '#999'}` }}>
             <div style={styles.statNumber}>{item.count}</div>
             <div style={styles.statLabel}>{LABELS[item.type] || item.type}</div>
@@ -59,12 +65,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Yashash holati taqsimoti */}
-      {stats?.byHousingType && (
+      {/* Yashash holati taqsimoti — ADMIN uchun faqat yotoqxona */}
+      {housingTypesToShow && housingTypesToShow.length > 0 && (
         <div style={styles.section}>
           <h2 style={styles.sectionTitle}>Yashash holati taqsimoti</h2>
           <div style={styles.barContainer}>
-            {stats.byHousingType.map((item) => (
+            {housingTypesToShow.map((item) => (
               <div key={item.type} style={styles.barItem}>
                 <div style={styles.barLabel}>{LABELS[item.type]}</div>
                 <div style={styles.barTrack}>
