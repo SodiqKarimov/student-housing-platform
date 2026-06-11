@@ -143,6 +143,53 @@ exports.oneIdCallback = async (req, res) => {
   }
 };
 
+// Email + parol bilan kirish (Super Admin tomonidan yaratilgan xodimlar uchun)
+exports.loginWithPassword = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return error(res, 'Email va parol talab qilinadi', 400);
+
+  try {
+    const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
+    if (!user) return error(res, 'Foydalanuvchi topilmadi', 404);
+    if (user.status !== 'ACTIVE') return error(res, 'Hisob faol emas yoki bloklangan', 403);
+    if (!user.passwordHash) return error(res, 'Bu hisob uchun parol o\'rnatilmagan. OneID orqali kiring.', 400);
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return error(res, 'Parol noto\'g\'ri', 401);
+
+    const { accessToken, refreshToken } = generateTokens(user.id, user.role);
+
+    await prisma.userSession.create({
+      data: {
+        userId: user.id,
+        refreshToken,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date(), lastLoginIp: req.ip },
+    });
+
+    await logAudit(user.id, 'LOGIN', 'User', user.id, {
+      ipAddress: req.ip,
+      description: 'Email/parol orqali kirish',
+    });
+
+    return success(res, {
+      accessToken,
+      refreshToken,
+      user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role },
+    }, 'Muvaffaqiyatli kirildi');
+  } catch (err) {
+    logger.error('Login xato', { error: err.message });
+    return error(res, 'Kirish jarayonida xato yuz berdi', 500);
+  }
+};
+
 // Token yangilash
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
