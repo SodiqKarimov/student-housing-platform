@@ -1,75 +1,117 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { studentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const HOUSING_LABELS = { DORMITORY: 'Yotoqxona', RENTAL: 'Ijara', COMMUTER: 'Uyidan' };
-const HOUSING_COLORS = { DORMITORY: '#1a3a6b', RENTAL: '#0d8f5c', COMMUTER: '#8f4d0d' };
+const TABS = [
+  { key: 'DORMITORY', label: 'Yotoqxonada' },
+  { key: 'RENTAL', label: 'Ijarada' },
+  { key: 'COMMUTER', label: "Qatnab o'quvchilar" },
+];
 
 const EMPTY_FORM = {
   firstName: '', lastName: '', middleName: '', pinfl: '', dateOfBirth: '',
-  gender: 'MALE', phone: '', email: '',
-  faculty: '', department: '', specialty: '', courseYear: '1',
-  educationForm: 'Kunduzgi', educationBasis: 'Grant',
+  gender: 'MALE', phone: '', parentPhone: '',
+  faculty: '', direction: '', courseYear: '1',
+  educationForm: 'Kunduzgi',
   housingType: 'COMMUTER', homeRegion: '', homeDistrict: '', homeAddress: '',
 };
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+
 export default function StudentsPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('DORMITORY');
   const [students, setStudents] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [filterHousing, setFilterHousing] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const fileInputRef = useRef(null);
 
   const canEdit = ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'].includes(user?.role);
 
   const load = useCallback(() => {
     setLoading(true);
-    studentApi.getAll({ page, limit: 15, search: search || undefined, housingType: filterHousing || undefined })
+    studentApi.getAll({ page, limit: 15, search: search || undefined, housingType: activeTab })
       .then(({ data }) => {
         setStudents(data.data?.items || []);
         setTotal(data.data?.total || 0);
       })
       .finally(() => setLoading(false));
-  }, [page, search, filterHousing]);
+  }, [page, search, activeTab]);
 
   useEffect(() => { load(); }, [load]);
 
-  const openAdd = () => { setForm(EMPTY_FORM); setEditTarget(null); setError(''); setShowModal(true); };
-  const openEdit = (s) => {
-    setForm({
-      firstName: s.user?.firstName || '', lastName: s.user?.lastName || '',
-      middleName: s.user?.middleName || '', pinfl: s.pinfl || '',
-      dateOfBirth: s.dateOfBirth ? s.dateOfBirth.slice(0, 10) : '',
-      gender: s.gender || 'MALE', phone: s.user?.phone || '', email: s.user?.email || '',
-      faculty: s.faculty || '', department: s.department || '', specialty: s.specialty || '',
-      courseYear: String(s.courseYear || 1), educationForm: s.educationForm || 'Kunduzgi',
-      educationBasis: s.educationBasis || 'Grant', housingType: s.housingType || 'COMMUTER',
-      homeRegion: s.homeRegion || '', homeDistrict: s.homeDistrict || '', homeAddress: s.homeAddress || '',
-    });
-    setEditTarget(s);
-    setError('');
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+    setSearch('');
+  };
+
+  const openAdd = () => {
+    setForm({ ...EMPTY_FORM, housingType: activeTab });
+    setEditTarget(null);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setFormError('');
     setShowModal(true);
   };
 
+  const openEdit = (st) => {
+    setForm({
+      firstName: st.user?.firstName || '',
+      lastName: st.user?.lastName || '',
+      middleName: st.user?.middleName || '',
+      pinfl: st.pinfl || '',
+      dateOfBirth: st.dateOfBirth ? st.dateOfBirth.slice(0, 10) : '',
+      gender: st.gender || 'MALE',
+      phone: st.user?.phone || '',
+      parentPhone: st.parentPhone || '',
+      faculty: st.faculty || '',
+      direction: st.direction || '',
+      courseYear: String(st.courseYear || 1),
+      educationForm: st.educationForm || 'Kunduzgi',
+      housingType: st.housingType || activeTab,
+      homeRegion: st.homeRegion || '',
+      homeDistrict: st.homeDistrict || '',
+      homeAddress: st.homeAddress || '',
+    });
+    setEditTarget(st);
+    setPhotoFile(null);
+    setPhotoPreview(st.photoUrl ? `${API_BASE.replace('/api/v1', '')}${st.photoUrl}` : null);
+    setFormError('');
+    setShowModal(true);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleSave = async () => {
-    setSaving(true); setError('');
+    setSaving(true); setFormError('');
     try {
       if (editTarget) {
         await studentApi.update(editTarget.id, form);
       } else {
-        await studentApi.create(form);
+        const formData = new FormData();
+        Object.entries(form).forEach(([k, v]) => { if (v !== '') formData.append(k, v); });
+        if (photoFile) formData.append('photo', photoFile);
+        await studentApi.create(formData);
       }
       setShowModal(false);
       load();
     } catch (e) {
-      setError(e.response?.data?.message || 'Xato yuz berdi');
+      setFormError(e.response?.data?.message || 'Xato yuz berdi');
     } finally {
       setSaving(false);
     }
@@ -90,7 +132,20 @@ export default function StudentsPage() {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Tablar */}
+      <div style={s.tabs}>
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => switchTab(tab.key)}
+            style={{ ...s.tab, ...(activeTab === tab.key ? s.tabActive : {}) }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Qidiruv */}
       <div style={s.filters}>
         <input
           style={s.search}
@@ -98,15 +153,9 @@ export default function StudentsPage() {
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1); }}
         />
-        <select style={s.select} value={filterHousing} onChange={e => { setFilterHousing(e.target.value); setPage(1); }}>
-          <option value="">Barcha yashash holati</option>
-          <option value="DORMITORY">Yotoqxona</option>
-          <option value="RENTAL">Ijara</option>
-          <option value="COMMUTER">Uyidan qatnab</option>
-        </select>
       </div>
 
-      {/* Table */}
+      {/* Jadval */}
       <div style={s.card}>
         {loading ? (
           <div style={s.center}>Yuklanmoqda...</div>
@@ -115,45 +164,58 @@ export default function StudentsPage() {
         ) : (
           <>
             <div style={s.tableHead}>
-              <span>F.I.O</span><span>PINFL</span><span>Fakultet</span>
-              <span>Kurs</span><span>Yashash holati</span><span>Holat</span>
+              <span>Rasm</span>
+              <span>F.I.O</span>
+              <span>PINFL</span>
+              <span>Fakultet</span>
+              <span>Yo'nalish</span>
+              <span>Kurs</span>
+              <span>Holat</span>
               {canEdit && <span>Amallar</span>}
             </div>
-            {students.map(st => (
-              <div key={st.id} style={s.tableRow}>
-                <span style={{ fontWeight: 500 }}>
-                  {st.user?.lastName} {st.user?.firstName} {st.user?.middleName}
-                </span>
-                <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{st.pinfl}</span>
-                <span>{st.faculty}</span>
-                <span>{st.courseYear}-kurs</span>
-                <span>
-                  <span style={{ ...s.badge, background: HOUSING_COLORS[st.housingType] + '20', color: HOUSING_COLORS[st.housingType] }}>
-                    {HOUSING_LABELS[st.housingType] || st.housingType}
-                  </span>
-                </span>
-                <span>
-                  <span style={{ ...s.badge, background: st.status === 'STUDYING' ? '#e8f5e9' : '#fff3e0', color: st.status === 'STUDYING' ? '#2e7d32' : '#e65100' }}>
-                    {st.status === 'STUDYING' ? "O'qiyapti" : st.status}
-                  </span>
-                </span>
-                {canEdit && (
+            {students.map(st => {
+              const fullName = `${st.user?.lastName || ''} ${st.user?.firstName || ''}`.trim();
+              const initials = `${(st.user?.lastName || '')[0] || ''}${(st.user?.firstName || '')[0] || ''}`.toUpperCase();
+              const photoSrc = st.photoUrl ? `${API_BASE.replace('/api/v1', '')}${st.photoUrl}` : null;
+              return (
+                <div key={st.id} style={s.tableRow}>
                   <span>
-                    <button onClick={() => openEdit(st)} style={s.btnEdit}>Tahrirlash</button>
+                    {photoSrc ? (
+                      <img src={photoSrc} alt={initials} style={s.avatar} />
+                    ) : (
+                      <div style={s.avatarInitials}>{initials}</div>
+                    )}
                   </span>
-                )}
-              </div>
-            ))}
+                  <span style={{ fontWeight: 500 }}>
+                    {st.user?.lastName} {st.user?.firstName} {st.user?.middleName}
+                  </span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{st.pinfl}</span>
+                  <span>{st.faculty}</span>
+                  <span style={{ fontSize: 13, color: '#555' }}>{st.direction || '—'}</span>
+                  <span>{st.courseYear}-kurs</span>
+                  <span>
+                    <span style={{ ...s.badge, background: st.status === 'STUDYING' ? '#e8f5e9' : '#fff3e0', color: st.status === 'STUDYING' ? '#2e7d32' : '#e65100' }}>
+                      {st.status === 'STUDYING' ? "O'qiyapti" : st.status}
+                    </span>
+                  </span>
+                  {canEdit && (
+                    <span>
+                      <button onClick={() => openEdit(st)} style={s.btnEdit}>Tahrirlash</button>
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Sahifalash */}
       {totalPages > 1 && (
         <div style={s.pagination}>
-          <button style={s.pageBtn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Oldingi</button>
+          <button style={s.pageBtn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>Oldingi</button>
           <span style={{ color: '#555', fontSize: 14 }}>{page} / {totalPages}</span>
-          <button style={s.pageBtn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Keyingi →</button>
+          <button style={s.pageBtn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Keyingi</button>
         </div>
       )}
 
@@ -162,8 +224,8 @@ export default function StudentsPage() {
         <div style={s.overlay} onClick={() => setShowModal(false)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <div style={s.modalHead}>
-              <h2 style={s.modalTitle}>{editTarget ? "Talabani tahrirlash" : "Yangi talaba qo'shish"}</h2>
-              <button onClick={() => setShowModal(false)} style={s.closeBtn}>✕</button>
+              <h2 style={s.modalTitle}>{editTarget ? 'Talabani tahrirlash' : "Yangi talaba qo'shish"}</h2>
+              <button onClick={() => setShowModal(false)} style={s.closeBtn}>X</button>
             </div>
 
             <div style={s.formGrid}>
@@ -175,24 +237,41 @@ export default function StudentsPage() {
               <SelectField label="Jinsi" value={form.gender} onChange={v => f('gender', v)}
                 options={[['MALE', 'Erkak'], ['FEMALE', 'Ayol']]} />
               <Field label="Telefon" value={form.phone} onChange={v => f('phone', v)} placeholder="+998..." />
-              {!editTarget && <Field label="Email" value={form.email} onChange={v => f('email', v)} placeholder="ixtiyoriy" />}
+              <Field label="Ota-ona/vasiy telefon" value={form.parentPhone} onChange={v => f('parentPhone', v)} placeholder="+998..." />
               <Field label="Fakultet *" value={form.faculty} onChange={v => f('faculty', v)} />
-              <Field label="Kafedra" value={form.department} onChange={v => f('department', v)} />
-              <Field label="Mutaxassislik" value={form.specialty} onChange={v => f('specialty', v)} />
+              <Field label="Yo'nalish" value={form.direction} onChange={v => f('direction', v)} placeholder="Yo'nalish nomi" />
               <SelectField label="Kurs" value={form.courseYear} onChange={v => f('courseYear', v)}
-                options={[['1','1-kurs'],['2','2-kurs'],['3','3-kurs'],['4','4-kurs'],['5','5-kurs'],['6','6-kurs']]} />
+                options={[['1','1-kurs'],['2','2-kurs'],['3','3-kurs'],['4','4-kurs'],['5','5-kurs'],['6','6-kurs'],['7','7-kurs']]} />
               <SelectField label="Ta'lim shakli" value={form.educationForm} onChange={v => f('educationForm', v)}
                 options={[['Kunduzgi','Kunduzgi'],['Sirtqi','Sirtqi'],['Kechki','Kechki']]} />
-              <SelectField label="Ta'lim asosi" value={form.educationBasis} onChange={v => f('educationBasis', v)}
-                options={[['Grant','Grant'],['Kontrakt','Kontrakt']]} />
-              <SelectField label="Yashash holati" value={form.housingType} onChange={v => f('housingType', v)}
-                options={[['COMMUTER','Uyidan qatnab'],['DORMITORY','Yotoqxona'],['RENTAL','Ijara']]} />
+              <SelectField label="Yashash turi" value={form.housingType} onChange={v => f('housingType', v)}
+                options={[['DORMITORY','Yotoqxona'],['RENTAL','Ijara'],['COMMUTER',"Qatnab o'qish"]]} />
               <Field label="Viloyat" value={form.homeRegion} onChange={v => f('homeRegion', v)} />
               <Field label="Tuman" value={form.homeDistrict} onChange={v => f('homeDistrict', v)} />
-              <Field label="Manzil" value={form.homeAddress} onChange={v => f('homeAddress', v)} span2 />
+              <Field label="Uy manzili" value={form.homeAddress} onChange={v => f('homeAddress', v)} span2 />
+
+              {/* Rasm yuklash */}
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={s.label}>Talaba rasmi</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  {photoPreview && (
+                    <img src={photoPreview} alt="preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }} />
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    style={{ display: 'none' }}
+                  />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} style={s.btnSecondary}>
+                    {photoPreview ? 'Rasmni almashtirish' : 'Rasm yuklash'}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {error && <div style={s.errorBox}>{error}</div>}
+            {formError && <div style={s.errorBox}>{formError}</div>}
 
             <div style={s.modalFooter}>
               <button onClick={() => setShowModal(false)} style={s.btnSecondary}>Bekor qilish</button>
@@ -233,16 +312,20 @@ function SelectField({ label, value, onChange, options }) {
 
 const s = {
   page: { padding: 24, maxWidth: 1200, margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontSize: 26, fontWeight: 700, color: '#1a3a6b', margin: '0 0 4px' },
   sub: { color: '#888', fontSize: 14, margin: 0 },
+  tabs: { display: 'flex', gap: 0, marginBottom: 16, borderBottom: '2px solid #eee' },
+  tab: { padding: '10px 24px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: '#888', borderBottom: '2px solid transparent', marginBottom: -2 },
+  tabActive: { color: '#1a3a6b', borderBottom: '2px solid #1a3a6b', fontWeight: 700 },
   filters: { display: 'flex', gap: 12, marginBottom: 16 },
   search: { flex: 1, padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, outline: 'none' },
-  select: { padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', minWidth: 180 },
   card: { background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' },
   center: { padding: 40, textAlign: 'center', color: '#888' },
-  tableHead: { display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 0.8fr 1.2fr 1fr 1fr', padding: '12px 16px', background: '#f8f9fa', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '1px solid #eee' },
-  tableRow: { display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1.5fr 0.8fr 1.2fr 1fr 1fr', padding: '12px 16px', borderBottom: '1px solid #f5f5f5', fontSize: 14, alignItems: 'center' },
+  tableHead: { display: 'grid', gridTemplateColumns: '52px 2.5fr 1.4fr 1.4fr 1.2fr 0.8fr 1fr 0.8fr', padding: '12px 16px', background: '#f8f9fa', fontWeight: 600, fontSize: 13, color: '#555', borderBottom: '1px solid #eee' },
+  tableRow: { display: 'grid', gridTemplateColumns: '52px 2.5fr 1.4fr 1.4fr 1.2fr 0.8fr 1fr 0.8fr', padding: '10px 16px', borderBottom: '1px solid #f5f5f5', fontSize: 14, alignItems: 'center' },
+  avatar: { width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid #ddd' },
+  avatarInitials: { width: 36, height: 36, borderRadius: '50%', background: '#1a3a6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 },
   badge: { padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500 },
   btnPrimary: { background: '#1a3a6b', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 14 },
   btnSecondary: { background: '#f5f5f5', color: '#333', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 14 },
@@ -250,10 +333,10 @@ const s = {
   pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 20 },
   pageBtn: { background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 14 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 },
-  modal: { background: '#fff', borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modal: { background: '#fff', borderRadius: 16, width: '100%', maxWidth: 720, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   modalHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #eee', position: 'sticky', top: 0, background: '#fff', zIndex: 1 },
   modalTitle: { fontSize: 18, fontWeight: 700, color: '#1a3a6b', margin: 0 },
-  closeBtn: { background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888', padding: 4 },
+  closeBtn: { background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888', padding: 4 },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 24 },
   label: { display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 4 },
   input: { width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', outline: 'none' },

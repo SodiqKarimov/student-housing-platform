@@ -8,6 +8,7 @@ router.get('/', authorize('SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'), rentalControll
 router.get('/stats', authorize('SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'), rentalController.getRentalStats);
 router.post('/', rentalController.createRental);
 router.get('/:id', rentalController.getRentalById);
+router.put('/:id', authorize('SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'), rentalController.updateRental);
 router.patch('/:id/verify', authorize('SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'), rentalController.verifyRental);
 
 module.exports = router;

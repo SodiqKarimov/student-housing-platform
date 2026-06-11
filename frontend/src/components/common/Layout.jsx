@@ -8,7 +8,6 @@ const navItems = [
   { path: '/dormitories', label: 'Yotoqxonalar', icon: '🏢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/commuters', label: 'Qatnab o\'qish', icon: '🚌', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
-  { path: '/bookings', label: 'Arizalar', icon: '📋', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/green-mode', label: 'Yashil rejim', icon: '🟢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/face-id', label: 'Face ID', icon: '🎥', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'] },
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },

@@ -8,6 +8,7 @@ router.get('/', dormitoryController.getAllDormitories);
 router.post('/', authorize('SUPER_ADMIN'), dormitoryController.createDormitory);
 router.get('/bookings', authorize('SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF'), dormitoryController.getBookings);
 router.get('/:id', dormitoryController.getDormitoryById);
+router.get('/rooms/:roomId/students', dormitoryController.getRoomStudents);
 router.get('/:dormitoryId/rooms', dormitoryController.getRooms);
 router.post('/:dormitoryId/rooms', authorize('SUPER_ADMIN', 'ADMIN'), dormitoryController.createRoom);
 

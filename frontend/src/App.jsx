@@ -7,7 +7,6 @@ import DashboardPage from './pages/DashboardPage';
 import StudentsPage from './pages/StudentsPage';
 import DormitoriesPage from './pages/DormitoriesPage';
 import UsersPage from './pages/UsersPage';
-import BookingsPage from './pages/BookingsPage';
 import RentalsPage from './pages/RentalsPage';
 import CommutersPage from './pages/CommutersPage';
 import GreenModePage from './pages/GreenModePage';
@@ -67,7 +66,6 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute><StudentsPage /></ProtectedRoute>} />
       <Route path="/dormitories" element={<ProtectedRoute><DormitoriesPage /></ProtectedRoute>} />
-      <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
       <Route path="/rentals" element={<ProtectedRoute><RentalsPage /></ProtectedRoute>} />
       <Route path="/commuters" element={<ProtectedRoute><CommutersPage /></ProtectedRoute>} />

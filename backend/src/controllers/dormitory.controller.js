@@ -8,7 +8,7 @@ exports.getAllDormitories = async (req, res) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const where = {
-    ...(region && { region: { contains: region, mode: 'insensitive' } }),
+    ...(region && { region: { contains: region } }),
     ...(status && { status }),
     ...(req.user.role === 'ADMIN' && { managerId: req.user.id }),
   };
@@ -209,6 +209,20 @@ exports.reviewBooking = async (req, res) => {
   });
 
   return success(res, updated, `Ariza ${action === 'APPROVED' ? 'tasdiqlandi' : 'rad etildi'}`);
+};
+
+// Xonadagi talabalar
+exports.getRoomStudents = async (req, res) => {
+  const { roomId } = req.params;
+  const students = await prisma.student.findMany({
+    where: {
+      dormitoryBookings: { some: { roomId, status: 'ACTIVE' } },
+    },
+    include: {
+      user: { select: { firstName: true, lastName: true, middleName: true, phone: true, photoUrl: true } },
+    },
+  });
+  return success(res, students);
 };
 
 // Bronlar ro'yxati

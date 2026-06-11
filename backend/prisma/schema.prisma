@@ -93,6 +93,9 @@ model Student {
   isFromRural     Boolean  @default(false)
   guardianPhone   String?
   guardianName    String?
+  parentPhone     String?
+  photoUrl        String?
+  direction       String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -124,6 +127,7 @@ model Dormitory {
   totalCapacity    Int
   currentOccupancy Int      @default(0)
   genderRestriction String? // MALE | FEMALE | null
+  floors           Int?
   status           String   @default("ACTIVE")
   amenities        String   @default("[]")
   phoneNumber      String?
@@ -213,7 +217,7 @@ model RentalRegistration {
   contractNumber      String?
   contractDate        DateTime?
   monthlyRent         Float?
-  verificationStatus  String    @default("PENDING")
+  verificationStatus  String    @default("ACTIVE")
   verifiedBy          String?
   verifiedAt          DateTime?
   verificationNote    String?

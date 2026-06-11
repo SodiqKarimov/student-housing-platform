@@ -36,7 +36,7 @@ exports.createRental = async (req, res) => {
       contractDate: contractDate ? new Date(contractDate) : null,
       monthlyRent: monthlyRent ? parseFloat(monthlyRent) : null,
       mahallahName,
-      verificationStatus: 'PENDING',
+      verificationStatus: 'ACTIVE',
     },
   });
 
@@ -60,8 +60,8 @@ exports.getAllRentals = async (req, res) => {
 
   const where = {
     ...(verificationStatus && { verificationStatus }),
-    ...(region && { region: { contains: region, mode: 'insensitive' } }),
-    ...(district && { district: { contains: district, mode: 'insensitive' } }),
+    ...(region && { region: { contains: region } }),
+    ...(district && { district: { contains: district } }),
   };
 
   const [rentals, total] = await Promise.all([
@@ -131,6 +131,29 @@ exports.verifyRental = async (req, res) => {
   });
 
   return success(res, updated, `Ijara manzili ${action === 'VERIFIED' ? 'tasdiqlandi' : 'rad etildi'}`);
+};
+
+// Ijara yangilash
+exports.updateRental = async (req, res) => {
+  const { id } = req.params;
+  const { region, district, address, ownerFullName, ownerPhone, ownerPinfl, contractNumber, contractDate, monthlyRent, mahallahName } = req.body;
+
+  const rental = await prisma.rentalRegistration.findUnique({ where: { id } });
+  if (!rental) return error(res, 'Ijara topilmadi', 404);
+
+  const updated = await prisma.rentalRegistration.update({
+    where: { id },
+    data: {
+      region, district, address, ownerFullName, ownerPhone,
+      ownerPinfl: ownerPinfl || null,
+      contractNumber,
+      contractDate: contractDate ? new Date(contractDate) : null,
+      monthlyRent: monthlyRent ? parseFloat(monthlyRent) : null,
+      mahallahName,
+    },
+  });
+
+  return success(res, updated, 'Ijara yangilandi');
 };
 
 // Ijara statistikasi

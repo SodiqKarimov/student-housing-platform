@@ -18,14 +18,14 @@ exports.getAllStudents = async (req, res) => {
     user: { deletedAt: null },
     ...(search && {
       OR: [
-        { user: { firstName: { contains: search, mode: 'insensitive' } } },
-        { user: { lastName: { contains: search, mode: 'insensitive' } } },
-        { studentIdNumber: { contains: search, mode: 'insensitive' } },
+        { user: { firstName: { contains: search } } },
+        { user: { lastName: { contains: search } } },
+        { studentIdNumber: { contains: search } },
         { pinfl: { contains: search } },
       ],
     }),
     ...(housingType && { housingType }),
-    ...(faculty && { faculty: { contains: faculty, mode: 'insensitive' } }),
+    ...(faculty && { faculty: { contains: faculty } }),
     ...(courseYear && { courseYear: parseInt(courseYear) }),
     ...(status && { status }),
   };
@@ -154,12 +154,13 @@ exports.getHousingStats = async (req, res) => {
 // Yangi talaba qo'shish (Admin)
 exports.createStudent = async (req, res) => {
   const {
-    firstName, lastName, middleName, email, phone,
+    firstName, lastName, middleName, phone,
     pinfl, dateOfBirth, gender, nationality,
     faculty, department, specialty, courseYear,
     educationForm, educationBasis, housingType,
     homeRegion, homeDistrict, homeAddress,
     studentIdNumber, isOrphan, isDisabled, isMartialArt, isFromRural,
+    parentPhone, direction,
   } = req.body;
 
   if (!firstName || !lastName || !pinfl || !faculty || !dateOfBirth) {
@@ -169,9 +170,11 @@ exports.createStudent = async (req, res) => {
   const existingUser = await prisma.user.findFirst({ where: { pinfl } });
   if (existingUser) return error(res, 'Bu PINFL allaqachon tizimda mavjud', 409);
 
-  const emailToUse = email || `${pinfl}@student.uz`;
+  const emailToUse = `${pinfl}@student.uz`;
   const existingEmail = await prisma.user.findFirst({ where: { email: emailToUse } });
-  if (existingEmail) return error(res, 'Bu email allaqachon mavjud', 409);
+  if (existingEmail) return error(res, 'Bu PINFL bilan email allaqachon mavjud', 409);
+
+  const photoUrl = req.file ? `/uploads/students/${req.file.filename}` : null;
 
   const student = await prisma.user.create({
     data: {
@@ -202,6 +205,9 @@ exports.createStudent = async (req, res) => {
           isDisabled: !!isDisabled,
           isMartialArt: !!isMartialArt,
           isFromRural: !!isFromRural,
+          parentPhone: parentPhone || null,
+          direction: direction || null,
+          photoUrl,
         },
       },
     },
