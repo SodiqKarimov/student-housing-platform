@@ -112,6 +112,8 @@ model Student {
   greenModeExceptions  GreenModeException[]
   faceIdEvents         FaceIdEvent[]
   recommendations      Recommendation[]
+  ichkiArizalar        IchkiAriza[]
+  paymentRecords       PaymentRecord[]
 
   @@index([faculty])
   @@index([housingType])
@@ -147,6 +149,8 @@ model Dormitory {
   faceIdEvents        FaceIdEvent[]
   staff               User[]             @relation("DormitoryStaff")
   archives            StudentArchive[]
+  ichkiArizalar       IchkiAriza[]
+  paymentRecords      PaymentRecord[]
 
   @@map("dormitories")
 }
@@ -477,4 +481,63 @@ model StudentArchive {
 
   @@index([dormitoryId])
   @@map("student_archives")
+}
+
+// ================================================================
+// ICHKI ARIZALAR (Yotoqxona ichidagi shikoyat va murojaatlar)
+// ================================================================
+
+model IchkiAriza {
+  id            String    @id @default(uuid())
+  arizaNumber   String    @unique
+  studentId     String?
+  studentName   String    // Anonim bo'lishi mumkin
+  dormitoryId   String?
+  roomNumber    String?
+  category      String    // SHIKOYAT | TAKLIF | MUAMMO | BOSHQA
+  priority      String    @default("ODDIY") // URGENT | YUQORI | ODDIY | PAST
+  title         String
+  description   String
+  status        String    @default("YANGI") // YANGI | JARAYONDA | BAJARILDI | YOPILDI
+  assignedTo    String?
+  resolvedAt    DateTime?
+  resolvedNote  String?
+  isAnonymous   Boolean   @default(false)
+  attachments   String?   // JSON array of file paths
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  student   Student?   @relation(fields: [studentId], references: [id])
+  dormitory Dormitory? @relation(fields: [dormitoryId], references: [id])
+
+  @@index([status])
+  @@index([studentId])
+  @@index([dormitoryId])
+  @@map("ichki_arizalar")
+}
+
+// ================================================================
+// TO'LOV KUZATUVI (yotoqxona_tizimi.html dan)
+// ================================================================
+
+model PaymentRecord {
+  id          String    @id @default(uuid())
+  studentId   String
+  dormitoryId String
+  month       String    // "2024-01"
+  amount      Float
+  status      String    @default("KUTILMOQDA") // KUTILMOQDA | TO'LANDI | KECHIKDI
+  paidAt      DateTime?
+  receiptNum  String?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  dormitory Dormitory @relation(fields: [dormitoryId], references: [id])
+
+  @@index([studentId])
+  @@index([dormitoryId])
+  @@index([month])
+  @@map("payment_records")
 }

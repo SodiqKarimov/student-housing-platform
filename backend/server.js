@@ -28,6 +28,8 @@ const faceIdRoutes = require('./src/routes/face-id.routes');
 const recommendationRoutes = require('./src/routes/recommendation.routes');
 const reportsRoutes = require('./src/routes/reports.routes');
 const profileRoutes = require('./src/routes/profile.routes');
+const ichkiArizaRoutes = require('./src/routes/ichkiAriza.routes');
+const paymentRoutes = require('./src/routes/payment.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +38,9 @@ const API = `/api/${process.env.API_VERSION || 'v1'}`;
 // ========================
 // Xavfsizlik middleware
 // ========================
+const { xssSanitize, sqlInjectionCheck, securityHeaders, userRateLimiter } = require('./src/middleware/security.middleware');
+
+app.use(securityHeaders);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -82,6 +87,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 app.use(maskSensitiveData);
+app.use(xssSanitize);
+app.use(sqlInjectionCheck);
 
 // Trust proxy (Nginx orqasida)
 app.set('trust proxy', 1);
@@ -107,6 +114,8 @@ app.use(`${API}/face-id`, faceIdRoutes);
 app.use(`${API}/recommendations`, recommendationRoutes);
 app.use(`${API}/reports`, reportsRoutes);
 app.use(`${API}/profile`, profileRoutes);
+app.use(`${API}/ichki-ariza`, ichkiArizaRoutes);
+app.use(`${API}/payments`, paymentRoutes);
 
 // Swagger UI (faqat development va staging)
 if (process.env.NODE_ENV !== 'production') {
