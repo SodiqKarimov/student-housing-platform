@@ -18,6 +18,7 @@ import ProfilePage from './pages/ProfilePage';
 import IchkiArizalarPage from './pages/IchkiArizalarPage';
 import XaritaPage from './pages/XaritaPage';
 import PaymentPage from './pages/PaymentPage';
+import SecurityPage from './pages/SecurityPage';
 
 function OneIdCallbackPage() {
   const [params] = useSearchParams();
@@ -81,6 +82,7 @@ function AppRoutes() {
       <Route path="/ichki-arizalar" element={<ProtectedRoute><IchkiArizalarPage /></ProtectedRoute>} />
       <Route path="/xarita" element={<ProtectedRoute><XaritaPage /></ProtectedRoute>} />
       <Route path="/payments" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+      <Route path="/security" element={<ProtectedRoute><SecurityPage /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

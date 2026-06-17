@@ -7,6 +7,7 @@ const hemisService = require('../services/hemis.service');
 const { logAudit } = require('../middleware/audit.middleware');
 const { success, error } = require('../utils/response');
 const logger = require('../config/logger');
+const { recordFailedLogin, clearLoginAttempts } = require('../middleware/isoSecurity.middleware');
 
 function generateTokens(userId, role) {
   const accessToken = jwt.sign(
@@ -155,7 +156,10 @@ exports.loginWithPassword = async (req, res) => {
     if (!user.passwordHash) return error(res, 'Bu hisob uchun parol o\'rnatilmagan. OneID orqali kiring.', 400);
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) return error(res, 'Parol noto\'g\'ri', 401);
+    if (!valid) {
+      recordFailedLogin(req.ip);
+      return error(res, 'Parol noto\'g\'ri', 401);
+    }
 
     const { accessToken, refreshToken } = generateTokens(user.id, user.role);
 
@@ -168,6 +172,8 @@ exports.loginWithPassword = async (req, res) => {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
+
+    clearLoginAttempts(req.ip);
 
     await prisma.user.update({
       where: { id: user.id },

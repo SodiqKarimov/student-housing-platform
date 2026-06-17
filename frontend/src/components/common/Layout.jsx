@@ -16,6 +16,7 @@ const navItems = [
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
   { path: '/reports', label: 'Hisobotlar', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF'] },
   { path: '/users', label: 'Foydalanuvchilar', icon: '👥', roles: ['SUPER_ADMIN'] },
+  { path: '/security', label: 'Xavfsizlik', icon: '🛡️', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/dormitories?arxiv=1', label: 'Arxivlash', icon: '🗂️', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
 ];

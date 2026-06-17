@@ -39,8 +39,16 @@ const API = `/api/${process.env.API_VERSION || 'v1'}`;
 // Xavfsizlik middleware
 // ========================
 const { xssSanitize, sqlInjectionCheck, securityHeaders, userRateLimiter } = require('./src/middleware/security.middleware');
+const {
+  auditTrail,
+  complianceHeaders,
+  personalDataAccessLog,
+  bruteForceProtection,
+  passwordStrengthMiddleware,
+} = require('./src/middleware/isoSecurity.middleware');
 
 app.use(securityHeaders);
+app.use(complianceHeaders);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -89,6 +97,8 @@ app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) }
 app.use(maskSensitiveData);
 app.use(xssSanitize);
 app.use(sqlInjectionCheck);
+app.use(auditTrail);
+app.use(personalDataAccessLog);
 
 // Trust proxy (Nginx orqasida)
 app.set('trust proxy', 1);
@@ -99,7 +109,7 @@ app.use('/uploads', express.static('uploads'));
 // ========================
 // API Routes
 // ========================
-app.use(`${API}/auth`, authRoutes);
+app.use(`${API}/auth`, bruteForceProtection, authRoutes);
 if (devRoutes) {
   app.use(`${API}/dev`, devRoutes);
   logger.warn('DEV routes faol! Production\'da o\'chiring.');
