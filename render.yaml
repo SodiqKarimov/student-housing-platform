@@ -23,7 +23,7 @@ services:
       - key: USE_MOCK
         value: "true"
       - key: ALLOWED_ORIGINS
-        value: https://clever-alpaca-2afbaf.netlify.app,https://wondrous-lily-08f6e9.netlify.app,http://localhost:3000
+        value: https://zippy-tulumba-b3f829.netlify.app,https://clever-alpaca-2afbaf.netlify.app,https://wondrous-lily-08f6e9.netlify.app,http://localhost:3000
       - key: RATE_LIMIT_WINDOW_MS
         value: "900000"
       - key: RATE_LIMIT_MAX_REQUESTS
