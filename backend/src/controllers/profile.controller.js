@@ -9,7 +9,7 @@ exports.getProfile = async (req, res) => {
     select: {
       id: true, firstName: true, lastName: true, middleName: true,
       email: true, phone: true, role: true, status: true,
-      lastLoginAt: true, createdAt: true,
+      photoUrl: true, lastLoginAt: true, createdAt: true,
       student: {
         select: {
           faculty: true, specialty: true, courseYear: true,

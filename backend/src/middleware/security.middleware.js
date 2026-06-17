@@ -41,28 +41,32 @@ const xssSanitize = (req, res, next) => {
 
 // ================================================================
 // SQL INJECTION HIMOYASI — xavfli belgilarni tekshirish
+// g flag ishlatilmasligi shart — stateful lastIndex muammosini oldini olish
 // ================================================================
 
-const SQL_INJECTION_PATTERN = /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b|--|;|\bOR\b\s+\d+\s*=\s*\d+)/gi;
+const SQL_INJECTION_DANGEROUS = [
+  /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b/i,
+  /--/,
+  /\bOR\b\s+['"]?\w+['"]?\s*=\s*['"]?\w+['"]?/i,
+  /\bOR\b\s+\d+\s*=\s*\d+/i,
+];
+
+const isInjectionAttempt = (val) => {
+  if (typeof val !== 'string') return false;
+  return SQL_INJECTION_DANGEROUS.some(re => re.test(val));
+};
+
+const checkObjForInjection = (obj) => {
+  if (!obj || typeof obj !== 'object') return false;
+  for (const val of Object.values(obj)) {
+    if (typeof val === 'string' && isInjectionAttempt(val)) return true;
+    if (val && typeof val === 'object' && !Array.isArray(val) && checkObjForInjection(val)) return true;
+  }
+  return false;
+};
 
 const sqlInjectionCheck = (req, res, next) => {
-  const checkValue = (val) => {
-    if (typeof val === 'string' && SQL_INJECTION_PATTERN.test(val)) {
-      return true;
-    }
-    return false;
-  };
-
-  const checkObj = (obj) => {
-    if (!obj) return false;
-    for (const val of Object.values(obj)) {
-      if (typeof val === 'string' && checkValue(val)) return true;
-      if (typeof val === 'object') return checkObj(val);
-    }
-    return false;
-  };
-
-  if (checkObj(req.body) || checkObj(req.query)) {
+  if (checkObjForInjection(req.body) || checkObjForInjection(req.query)) {
     return res.status(400).json({
       success: false,
       message: 'Noto\'g\'ri so\'rov formati',

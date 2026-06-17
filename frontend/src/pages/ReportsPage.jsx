@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { reportsApi } from '../services/api';
+import { useState, useEffect } from 'react';
+import { reportsApi, dormitoryApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function downloadBlob(blob, filename) {
@@ -11,12 +11,24 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+const SEL = { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', background: 'white' };
+
 export default function ReportsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState({});
   const [auditFrom, setAuditFrom] = useState('');
   const [auditTo, setAuditTo] = useState('');
   const [studentFilter, setStudentFilter] = useState('');
+  const [dormFilter, setDormFilter] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
+  const [violDormFilter, setViolDormFilter] = useState('');
+  const [dormitories, setDormitories] = useState([]);
+
+  useEffect(() => {
+    dormitoryApi.getAll({ limit: 50 })
+      .then(({ data }) => setDormitories(data.data?.items || []))
+      .catch(() => {});
+  }, []);
 
   const download = async (key, apiFn, filename) => {
     setLoading(p => ({ ...p, [key]: true }));
@@ -29,55 +41,100 @@ export default function ReportsPage() {
     setLoading(p => ({ ...p, [key]: false }));
   };
 
+  const dormOptions = (
+    <>
+      <option value="">Barcha yotoqxonalar</option>
+      {dormitories.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+    </>
+  );
+
+  const courseOptions = (
+    <>
+      <option value="">Barcha kurslar</option>
+      {[1,2,3,4,5,6].map(c => <option key={c} value={c}>{c}-kurs</option>)}
+    </>
+  );
+
   const reports = [
     {
       key: 'students',
       title: 'Talabalar ro\'yxati',
-      desc: 'Barcha talabalar — yashash holati, fakultet, kurs va boshqa ma\'lumotlar bilan',
+      desc: 'Yotoqxona, ijara, qatnab o\'quvchilar — yo\'nalish va kurs kesimida',
       icon: '🎓',
       color: '#3b82f6',
-      onDownload: () => download('students', () => reportsApi.students({ housingType: studentFilter || undefined }), `talabalar_${today()}.xlsx`),
+      onDownload: () => download('students', () => reportsApi.students({
+        housingType: studentFilter || undefined,
+        dormitoryId: dormFilter || undefined,
+        courseYear: courseFilter || undefined,
+      }), `talabalar_${today()}.xlsx`),
       extra: (
-        <select value={studentFilter} onChange={e => setStudentFilter(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', background: 'white' }}>
-          <option value="">Barchasi</option>
-          <option value="DORMITORY">Yotoqxona</option>
-          <option value="RENTAL">Ijara</option>
-          <option value="COMMUTER">Uyidan qatnab</option>
-        </select>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select value={studentFilter} onChange={e => setStudentFilter(e.target.value)} style={SEL}>
+            <option value="">Barcha tur</option>
+            <option value="DORMITORY">Yotoqxona</option>
+            <option value="RENTAL">Ijara</option>
+            <option value="COMMUTER">Uyidan qatnab</option>
+          </select>
+          <select value={dormFilter} onChange={e => setDormFilter(e.target.value)} style={SEL}>{dormOptions}</select>
+          <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)} style={SEL}>{courseOptions}</select>
+        </div>
       ),
     },
     {
       key: 'dormitories',
-      title: 'Yotoqxonalar statistikasi',
-      desc: 'Har bir yotoqxona bo\'yicha xonalar, sig\'im va bandlik ma\'lumotlari',
+      title: 'Yotoqxona statistikasi',
+      desc: 'Har bir yotoqxona va uning qavatlari bo\'yicha xona, sig\'im, bandlik',
       icon: '🏢',
       color: '#10b981',
-      onDownload: () => download('dormitories', () => reportsApi.dormitories(), `yotoqxonalar_${today()}.xlsx`),
+      onDownload: () => download('dormitories', () => reportsApi.dormitories({
+        dormitoryId: dormFilter || undefined,
+      }), `yotoqxonalar_${today()}.xlsx`),
+      extra: (
+        <select value={dormFilter} onChange={e => setDormFilter(e.target.value)} style={SEL}>{dormOptions}</select>
+      ),
     },
     {
       key: 'rentals',
       title: 'Ijara ro\'yxati',
-      desc: 'Ijarada yashovchi talabalar — uy egasi, manzil, shartnoma ma\'lumotlari bilan',
+      desc: 'Ijarada yashovchi talabalar — yo\'nalish va kurs kesimida',
       icon: '🏠',
       color: '#f59e0b',
-      onDownload: () => download('rentals', () => reportsApi.rentals(), `ijara_${today()}.xlsx`),
+      onDownload: () => download('rentals', () => reportsApi.rentals({
+        courseYear: courseFilter || undefined,
+      }), `ijara_${today()}.xlsx`),
+      extra: (
+        <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)} style={SEL}>{courseOptions}</select>
+      ),
     },
     {
       key: 'violations',
       title: 'Qoidabuzarliklar',
-      desc: 'Yashil rejim qoidabuzarliklari — kech kirish va erta chiqishlar',
+      desc: 'Yashil rejim qoidabuzarliklari — yotoqxona, yo\'nalish va kurs kesimida',
       icon: '⚠️',
       color: '#ef4444',
-      onDownload: () => download('violations', () => reportsApi.violations(), `qoidabuzarliklar_${today()}.xlsx`),
+      onDownload: () => download('violations', () => reportsApi.violations({
+        dormitoryId: violDormFilter || undefined,
+        courseYear: courseFilter || undefined,
+      }), `qoidabuzarliklar_${today()}.xlsx`),
+      extra: (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select value={violDormFilter} onChange={e => setViolDormFilter(e.target.value)} style={SEL}>{dormOptions}</select>
+          <select value={courseFilter} onChange={e => setCourseFilter(e.target.value)} style={SEL}>{courseOptions}</select>
+        </div>
+      ),
     },
     {
       key: 'faceid',
       title: 'Face ID hodisalari',
-      desc: 'Kirish/chiqish hodisalari ro\'yxati (bugungi yoki barcha hodisalar)',
+      desc: 'Kirish/chiqish hodisalari ro\'yxati — yotoqxona kesimida',
       icon: '🎥',
       color: '#8b5cf6',
-      onDownload: () => download('faceid', () => reportsApi.faceId(), `faceid_${today()}.xlsx`),
+      onDownload: () => download('faceid', () => reportsApi.faceId({
+        dormitoryId: dormFilter || undefined,
+      }), `faceid_${today()}.xlsx`),
+      extra: (
+        <select value={dormFilter} onChange={e => setDormFilter(e.target.value)} style={SEL}>{dormOptions}</select>
+      ),
     },
   ];
 

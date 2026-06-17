@@ -38,8 +38,10 @@ export function AuthProvider({ children }) {
     setUser(userData);
   };
 
+  const getToken = () => localStorage.getItem('accessToken');
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithOneId, logout, setTokens }}>
+    <AuthContext.Provider value={{ user, loading, loginWithOneId, logout, setTokens, getToken }}>
       {children}
     </AuthContext.Provider>
   );

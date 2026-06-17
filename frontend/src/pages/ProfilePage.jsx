@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { profileApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const API_HOST = (import.meta.env.VITE_API_URL || '/api/v1').replace('/api/v1', '');
+
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin', ADMIN: 'Administrator', DEAN_OFFICE: 'Dekanat',
   DORMITORY_STAFF: 'TTJ xodimi', TUTOR: 'Tyutor', STUDENT: 'Talaba',
@@ -24,6 +26,7 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPwd, setShowPwd] = useState({ cur: false, new: false, confirm: false });
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditTotal, setAuditTotal] = useState(0);
   const [auditPage, setAuditPage] = useState(1);
@@ -104,7 +107,7 @@ export default function ProfilePage() {
       <div style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', borderRadius: '16px', padding: '24px', marginBottom: '24px', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
         <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileInputRef.current.click()}>
           {profile.photoUrl ? (
-            <img src={profile.photoUrl} alt="avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.5)' }} />
+            <img src={profile.photoUrl.startsWith('http') ? profile.photoUrl : `${API_HOST}${profile.photoUrl}`} alt="avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.5)' }} />
           ) : (
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 700 }}>
               {profile.firstName?.[0]}{profile.lastName?.[0]}
@@ -256,15 +259,26 @@ export default function ProfilePage() {
             ⚠️ Parolni o'zgartirganingizdan so'ng barcha sessiyalar tugatiladi va qayta kirish talab etiladi.
           </div>
           {[
-            { key: 'currentPassword', label: 'Joriy parol', placeholder: '••••••••' },
-            { key: 'newPassword', label: 'Yangi parol (kamida 8 belgi)', placeholder: '••••••••' },
-            { key: 'confirmPassword', label: 'Yangi parolni tasdiqlang', placeholder: '••••••••' },
+            { key: 'currentPassword', label: 'Joriy parol', showKey: 'cur' },
+            { key: 'newPassword', label: 'Yangi parol (kamida 8 belgi)', showKey: 'new' },
+            { key: 'confirmPassword', label: 'Yangi parolni tasdiqlang', showKey: 'confirm' },
           ].map(f => (
             <div key={f.key} style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500 }}>{f.label}</label>
-              <input type="password" value={pwdForm[f.key]} onChange={e => setPwdForm(p => ({ ...p, [f.key]: e.target.value }))}
-                placeholder={f.placeholder}
-                style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }} />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPwd[f.showKey] ? 'text' : 'password'}
+                  value={pwdForm[f.key]}
+                  onChange={e => setPwdForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder="••••••••"
+                  style={{ width: '100%', padding: '10px 44px 10px 10px', border: '1px solid #d1d5db', borderRadius: '8px', boxSizing: 'border-box' }}
+                />
+                <button type="button"
+                  onClick={() => setShowPwd(p => ({ ...p, [f.showKey]: !p[f.showKey] }))}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, color: '#6b7280' }}>
+                  {showPwd[f.showKey] ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
           ))}
           <button onClick={handleChangePassword} disabled={loading}

@@ -279,7 +279,19 @@ exports.deleteDormitory = async (req, res) => {
     return error(res, `Bu yotoqxonada ${activeBookings} ta faol talaba bor. Avval ularni chiqaring.`, 400);
   }
 
-  await prisma.dormitory.delete({ where: { id } });
+  // Cascade delete: bog'liq barcha yozuvlarni navbat bilan o'chirish
+  await prisma.$transaction([
+    prisma.dormitoryBooking.deleteMany({ where: { dormitoryId: id } }),
+    prisma.greenModeLog.deleteMany({ where: { dormitoryId: id } }),
+    prisma.greenModeViolation.deleteMany({ where: { dormitoryId: id } }),
+    prisma.greenModeException.deleteMany({ where: { dormitoryId: id } }),
+    prisma.faceIdEvent.deleteMany({ where: { dormitoryId: id } }),
+    prisma.ichkiAriza.deleteMany({ where: { dormitoryId: id } }),
+    prisma.paymentRecord.deleteMany({ where: { dormitoryId: id } }),
+    prisma.studentArchive.deleteMany({ where: { dormitoryId: id } }),
+    prisma.room.deleteMany({ where: { dormitoryId: id } }),
+    prisma.dormitory.delete({ where: { id } }),
+  ]);
 
   await logAudit(req.user.id, 'DELETE', 'Dormitory', id, {
     description: "Yotoqxona o'chirildi",

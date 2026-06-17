@@ -6,7 +6,7 @@ const navItems = [
   { path: '/dashboard', label: 'Bosh sahifa', icon: '🏠', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
   { path: '/students', label: 'Talabalar', icon: '👨‍🎓', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE'] },
   { path: '/dormitories', label: 'Yotoqxonalar', icon: '🏢', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE', 'TUTOR'] },
-  { path: '/xarita', label: 'Xona Haritasi', icon: '🗺️', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
+  { path: '/xarita', label: 'Yotoqxonalar Xaritasi', icon: '🗺️', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
   { path: '/payments', label: "To'lovlar", icon: '💳', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
   { path: '/ichki-arizalar', label: 'Ichki Murojaatlar', icon: '📬', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE', 'TUTOR'] },
   { path: '/rentals', label: 'Ijara', icon: '🏠', roles: ['SUPER_ADMIN', 'DEAN_OFFICE', 'TUTOR'] },
@@ -16,6 +16,7 @@ const navItems = [
   { path: '/recommendations', label: 'Tavsiyanomalar', icon: '⭐', roles: ['SUPER_ADMIN', 'ADMIN', 'DORMITORY_STAFF', 'DEAN_OFFICE'] },
   { path: '/reports', label: 'Hisobotlar', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF'] },
   { path: '/users', label: 'Foydalanuvchilar', icon: '👥', roles: ['SUPER_ADMIN'] },
+  { path: '/dormitories?arxiv=1', label: 'Arxivlash', icon: '🗂️', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { path: '/profile', label: 'Profil', icon: '👤', roles: ['SUPER_ADMIN', 'ADMIN', 'DEAN_OFFICE', 'DORMITORY_STAFF', 'TUTOR', 'STUDENT'] },
 ];
 

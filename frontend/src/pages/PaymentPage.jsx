@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 const API = import.meta.env.VITE_API_URL || '/api/v1';
 
 const STATUS_CONFIG = {
-  "TO'LANDI": { label: "To'landi", color: '#10b981', bg: '#d1fae5' },
-  KUTILMOQDA: { label: 'Kutilmoqda', color: '#f59e0b', bg: '#fef3c7' },
-  KECHIKDI: { label: 'Kechikdi', color: '#ef4444', bg: '#fee2e2' },
+  "TO'LANDI": { label: "To'lagan", color: '#10b981', bg: '#d1fae5' },
+  KUTILMOQDA: { label: "To'lamagan", color: '#6b7280', bg: '#f3f4f6' },
+  KECHIKDI: { label: 'Qarzdor', color: '#ef4444', bg: '#fee2e2' },
 };
 
 const MONTHS = [
@@ -26,7 +26,7 @@ function monthLabel(str) {
 }
 
 export default function PaymentPage() {
-  const { token } = useAuth();
+  const { getToken } = useAuth();
   const [students, setStudents] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +36,15 @@ export default function PaymentPage() {
   const [form, setForm] = useState({ studentId: '', dormitoryId: '', month: getCurrentMonth(), amount: '', status: "TO'LANDI", receiptNum: '', note: '' });
   const [dormitories, setDormitories] = useState([]);
 
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` };
 
   useEffect(() => {
     Promise.all([
       fetch(`${API}/students?limit=500`, { headers }).then(r => r.json()),
-      fetch(`${API}/dormitories`, { headers }).then(r => r.json()),
+      fetch(`${API}/dormitories?limit=50`, { headers }).then(r => r.json()),
     ]).then(([sData, dData]) => {
-      if (sData.success) setStudents(sData.data || []);
-      if (dData.success) setDormitories(dData.data || []);
+      if (sData.success) setStudents(sData.data?.items || sData.data || []);
+      if (dData.success) setDormitories(dData.data?.items || dData.data || []);
     });
   }, []);
 
@@ -87,6 +87,31 @@ export default function PaymentPage() {
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
+  const downloadReport = () => {
+    if (filtered.length === 0) return;
+    const rows = [
+      ['F.I.O', "Yo'nalish", 'Kurs', 'Yotoqxona', 'Oy', 'Summa', 'Status', 'Chek raqami'],
+      ...filtered.map(p => [
+        `${p.student?.lastName || ''} ${p.student?.firstName || ''}`,
+        p.student?.direction || '—',
+        p.student?.courseYear ? `${p.student.courseYear}-kurs` : '—',
+        p.dormitory?.name || '—',
+        monthLabel(p.month),
+        p.amount,
+        STATUS_CONFIG[p.status]?.label || p.status,
+        p.receiptNum || '—',
+      ]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tolovlar_${selectedMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -94,9 +119,15 @@ export default function PaymentPage() {
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#111827' }}>To'lov Kuzatuvi</h1>
           <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 14 }}>Yotoqxona to'lovlari holati</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
             style={{ padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14 }} />
+          <button onClick={downloadReport} style={{
+            padding: '10px 16px', borderRadius: 10, border: '1.5px solid #10b981',
+            background: '#fff', color: '#10b981', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+          }}>
+            📊 CSV
+          </button>
           <button onClick={() => setShowForm(true)} style={{
             padding: '10px 20px', borderRadius: 10, border: 'none',
             background: '#1e3a5f', color: '#fff', fontWeight: 600, cursor: 'pointer',
@@ -109,10 +140,10 @@ export default function PaymentPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { label: 'Jami yig\'ilishi kerak', value: `${totalAmount.toLocaleString()} so'm`, color: '#1e3a5f', icon: '💰' },
+          { label: 'Jami', value: `${totalAmount.toLocaleString()} so'm`, color: '#1e3a5f', icon: '💰' },
           { label: "To'lagan", value: paidCount, color: '#10b981', icon: '✅' },
-          { label: 'Kutilmoqda', value: pendingCount, color: '#f59e0b', icon: '⏳' },
-          { label: 'Kechikdi', value: lateCount, color: '#ef4444', icon: '⚠️' },
+          { label: "To'lamagan", value: pendingCount, color: '#6b7280', icon: '⏸️' },
+          { label: 'Qarzdor', value: lateCount, color: '#ef4444', icon: '⚠️' },
         ].map(s => (
           <div key={s.label} style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
             <div style={{ fontSize: 28, marginBottom: 4 }}>{s.icon}</div>

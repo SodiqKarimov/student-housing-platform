@@ -30,7 +30,7 @@ const CARD_STYLE = {
 };
 
 export default function IchkiArizalarPage() {
-  const { token } = useAuth();
+  const { getToken } = useAuth();
   const [arizalar, setArizalar] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function IchkiArizalarPage() {
   const [form, setForm] = useState({ title: '', description: '', category: 'MUAMMO', priority: 'ODDIY', roomNumber: '', isAnonymous: false });
   const [creating, setCreating] = useState(false);
 
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` };
 
   const fetchAll = async () => {
     setLoading(true);

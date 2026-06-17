@@ -99,6 +99,10 @@ export default function StudentsPage() {
   };
 
   const handleSave = async () => {
+    if (!form.direction?.trim()) {
+      setFormError("Yo'nalish majburiy maydon");
+      return;
+    }
     setSaving(true); setFormError('');
     try {
       if (editTarget) {
@@ -230,17 +234,36 @@ export default function StudentsPage() {
             </div>
 
             <div style={s.formGrid}>
+              {/* RASM TEPADA */}
+              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 20, padding: '12px 0', borderBottom: '1px solid #f3f4f6', marginBottom: 8 }}>
+                <div style={{ position: 'relative' }}>
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="preview" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid #1e3a5f' }} />
+                  ) : (
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#9ca3af' }}>👤</div>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Talaba rasmi</div>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...s.btnSecondary, fontSize: 13 }}>
+                    📷 {photoPreview ? 'Rasmni almashtirish' : 'Rasm yuklash'}
+                  </button>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>JPG, PNG. Maks 2MB</div>
+                </div>
+              </div>
+
               <Field label="Familiya *" value={form.lastName} onChange={v => f('lastName', v)} />
               <Field label="Ism *" value={form.firstName} onChange={v => f('firstName', v)} />
               <Field label="Otasining ismi" value={form.middleName} onChange={v => f('middleName', v)} />
-              {!editTarget && <Field label="PINFL *" value={form.pinfl} onChange={v => f('pinfl', v)} placeholder="14 raqam" />}
+              {!editTarget && <Field label="PINFL (ixtiyoriy)" value={form.pinfl} onChange={v => f('pinfl', v)} placeholder="14 ta raqam" />}
               <Field label="Tug'ilgan sana *" type="date" value={form.dateOfBirth} onChange={v => f('dateOfBirth', v)} />
               <SelectField label="Jinsi" value={form.gender} onChange={v => f('gender', v)}
                 options={[['MALE', 'Erkak'], ['FEMALE', 'Ayol']]} />
               <Field label="Telefon" value={form.phone} onChange={v => f('phone', v)} placeholder="+998..." />
               <Field label="Ota-ona/vasiy telefon" value={form.parentPhone} onChange={v => f('parentPhone', v)} placeholder="+998..." />
               <Field label="Fakultet *" value={form.faculty} onChange={v => f('faculty', v)} />
-              <Field label="Yo'nalish" value={form.direction} onChange={v => f('direction', v)} placeholder="Yo'nalish nomi" />
+              <Field label="Yo'nalish *" value={form.direction} onChange={v => f('direction', v)} placeholder="Yo'nalish nomi (majburiy)" required />
               <SelectField label="Kurs" value={form.courseYear} onChange={v => f('courseYear', v)}
                 options={[['1','1-kurs'],['2','2-kurs'],['3','3-kurs'],['4','4-kurs'],['5','5-kurs'],['6','6-kurs'],['7','7-kurs']]} />
               <SelectField label="Ta'lim shakli" value={form.educationForm} onChange={v => f('educationForm', v)}
@@ -250,26 +273,6 @@ export default function StudentsPage() {
               <Field label="Viloyat" value={form.homeRegion} onChange={v => f('homeRegion', v)} />
               <Field label="Tuman" value={form.homeDistrict} onChange={v => f('homeDistrict', v)} />
               <Field label="Uy manzili" value={form.homeAddress} onChange={v => f('homeAddress', v)} span2 />
-
-              {/* Rasm yuklash */}
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={s.label}>Talaba rasmi</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  {photoPreview && (
-                    <img src={photoPreview} alt="preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }} />
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    style={{ display: 'none' }}
-                  />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} style={s.btnSecondary}>
-                    {photoPreview ? 'Rasmni almashtirish' : 'Rasm yuklash'}
-                  </button>
-                </div>
-              </div>
             </div>
 
             {formError && <div style={s.errorBox}>{formError}</div>}

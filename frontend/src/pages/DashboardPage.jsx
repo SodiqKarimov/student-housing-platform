@@ -153,27 +153,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Arxiv bo'limi — faqat SUPER_ADMIN va ADMIN */}
-      {canArchive && dorms.length > 0 && (
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Yotoqxona arxivlari</h2>
-          <p style={{ color: '#888', fontSize: 13, margin: '0 0 16px' }}>Yil yakunida talabalar ma'lumotlarini arxivlash uchun tegishli yotoqxonani tanlang.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-            {dorms.map(d => (
-              <div key={d.id} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#1a3a6b' }}>{d.name}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>{d.currentOccupancy} ta faol talaba</div>
-                <button
-                  onClick={() => navigate('/dormitories')}
-                  style={{ padding: '7px 0', background: '#e8f5e9', color: '#2e7d32', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
-                >
-                  Arxivlash →
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
