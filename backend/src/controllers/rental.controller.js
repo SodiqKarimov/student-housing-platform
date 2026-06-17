@@ -2,6 +2,7 @@ const { prisma } = require('../config/database');
 const { logAudit } = require('../middleware/audit.middleware');
 const { success, error, paginated } = require('../utils/response');
 const { encrypt } = require('../utils/encryption');
+const { notify } = require('../services/telegram.service');
 
 // Ijara ro'yxatga olish
 exports.createRental = async (req, res) => {
@@ -49,6 +50,16 @@ exports.createRental = async (req, res) => {
     newValues: { studentId, region, district },
     description: 'Ijara ro\'yxatga olindi',
   });
+
+  // Telegram bildirishnoma (xatolik chiqsa ham jarayon to'xtamasin)
+  const studentData = await prisma.student.findUnique({ where: { id: studentId }, include: { user: true } });
+  notify.newRental({
+    studentName: studentData ? `${studentData.user.lastName} ${studentData.user.firstName}` : studentId,
+    studentId: studentData?.studentIdNumber,
+    region, district,
+    hostName: ownerFullName,
+    monthlyRent,
+  }).catch(() => {});
 
   return success(res, rental, 'Ijara manzili ro\'yxatga olindi', 201);
 };
@@ -129,6 +140,17 @@ exports.verifyRental = async (req, res) => {
   await logAudit(req.user.id, action === 'VERIFIED' ? 'APPROVE' : 'REJECT', 'RentalRegistration', id, {
     description: `Ijara manzili ${action === 'VERIFIED' ? 'tasdiqlandi' : 'rad etildi'}`,
   });
+
+  // Telegram bildirishnoma
+  const rentalFull = await prisma.rentalRegistration.findUnique({ where: { id }, include: { student: { include: { user: true } } } });
+  const studentName = rentalFull ? `${rentalFull.student.user.lastName} ${rentalFull.student.user.firstName}` : '';
+  const approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+
+  if (action === 'VERIFIED') {
+    notify.rentalApproved({ studentName, region: rental.region, district: rental.district, approvedBy: approverName }).catch(() => {});
+  } else {
+    notify.rentalRejected({ studentName, region: rental.region, district: rental.district, reason: note }).catch(() => {});
+  }
 
   return success(res, updated, `Ijara manzili ${action === 'VERIFIED' ? 'tasdiqlandi' : 'rad etildi'}`);
 };

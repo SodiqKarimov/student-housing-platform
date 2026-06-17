@@ -7,8 +7,13 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const { connectDatabase } = require('./src/config/database');
+const { connectCache } = require('./src/config/cache');
 const logger = require('./src/config/logger');
 const { maskSensitiveData } = require('./src/middleware/dataProtection.middleware');
+const { errorHandler } = require('./src/middleware/errorHandler.middleware');
+const { initTelegramBot } = require('./src/services/telegram.service');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./src/config/swagger');
 
 // Routes
 const authRoutes = require('./src/routes/auth.routes');
@@ -103,6 +108,16 @@ app.use(`${API}/recommendations`, recommendationRoutes);
 app.use(`${API}/reports`, reportsRoutes);
 app.use(`${API}/profile`, profileRoutes);
 
+// Swagger UI (faqat development va staging)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'Turar Joy API',
+    customCss: '.swagger-ui .topbar { background: #1a1a2e; }',
+  }));
+  app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
+  logger.info(`Swagger UI: http://localhost:${process.env.PORT || 5000}/api-docs`);
+}
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -141,19 +156,15 @@ app.use((req, res) => {
 });
 
 // Global xato handler
-app.use((err, req, res, next) => {
-  logger.error('Server xato', { error: err.message, stack: err.stack, url: req.originalUrl });
-  res.status(err.status || 500).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' ? 'Server xatosi' : err.message,
-  });
-});
+app.use(errorHandler);
 
 // ========================
 // Server ishga tushirish
 // ========================
 async function bootstrap() {
   await connectDatabase();
+  await connectCache();
+  initTelegramBot();
 
   app.listen(PORT, () => {
     logger.info(`Server ishga tushdi`, {

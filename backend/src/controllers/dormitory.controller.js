@@ -1,6 +1,7 @@
 const { prisma } = require('../config/database');
 const { logAudit } = require('../middleware/audit.middleware');
 const { success, error, paginated } = require('../utils/response');
+const { notify } = require('../services/telegram.service');
 
 // Yotoqxonalar ro'yxati
 exports.getAllDormitories = async (req, res) => {
@@ -149,6 +150,11 @@ exports.createBooking = async (req, res) => {
     description: 'Yotoqxona bron qilindi',
   });
 
+  notify.newBooking({
+    studentName: `${booking.student.user.lastName} ${booking.student.user.firstName}`,
+    dormitoryName: booking.dormitory.name,
+  }).catch(() => {});
+
   return success(res, booking, 'Ariza topshirildi', 201);
 };
 
@@ -208,6 +214,21 @@ exports.reviewBooking = async (req, res) => {
     newValues: { status: action },
     description: `Ariza ${action === 'APPROVED' ? 'tasdiqlandi' : 'rad etildi'}`,
   });
+
+  // Telegram bildirishnoma
+  const bookingFull = await prisma.dormitoryBooking.findUnique({
+    where: { id },
+    include: { student: { include: { user: true } }, dormitory: true, room: true },
+  });
+  if (bookingFull) {
+    const studentName = `${bookingFull.student.user.lastName} ${bookingFull.student.user.firstName}`;
+    const approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+    if (action === 'APPROVED') {
+      notify.bookingApproved({ studentName, dormitoryName: bookingFull.dormitory.name, roomNumber: bookingFull.room?.roomNumber, approvedBy: approverName }).catch(() => {});
+    } else {
+      notify.bookingRejected({ studentName, dormitoryName: bookingFull.dormitory.name, reason: rejectionReason }).catch(() => {});
+    }
+  }
 
   return success(res, updated, `Ariza ${action === 'APPROVED' ? 'tasdiqlandi' : 'rad etildi'}`);
 };
