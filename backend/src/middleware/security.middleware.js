@@ -7,13 +7,13 @@ const crypto = require('crypto');
 
 function escapeHtml(str) {
   if (typeof str !== 'string') return str;
+  // Faqat haqiqiy XSS vektorlarini bloklash.
+  // ' va / O'zbek ismlarida ishlatiladi (O'g'il, G'ayrat), shuning uchun o'zgartirilmaydi.
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
-    .replace(/\//g, '&#x2F;');
+    .replace(/"/g, '&quot;');
 }
 
 function sanitizeObject(obj) {

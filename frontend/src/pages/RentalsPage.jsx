@@ -52,7 +52,7 @@ export default function RentalsPage() {
     setEditTarget(null);
     setFormError('');
     setShowAddModal(true);
-    studentApi.getAll({ limit: 300, housingType: 'COMMUTER' })
+    studentApi.getAll({ limit: 500 })
       .then(r => setStudents(r.data.data?.items || []))
       .catch(() => {});
   };

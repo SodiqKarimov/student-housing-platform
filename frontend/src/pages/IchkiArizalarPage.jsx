@@ -167,7 +167,7 @@ export default function IchkiArizalarPage() {
                   <span>{CATEGORIES[a.category]?.label}</span>
                   {a.roomNumber && <span>Xona: {a.roomNumber}</span>}
                   {a.isAnonymous ? <span>Anonim</span> : <span>{a.studentName}</span>}
-                  <span>{new Date(a.createdAt).toLocaleDateString('uz-UZ')}</span>
+                  <span>{a.createdAt ? new Date(a.createdAt).toLocaleDateString('uz-UZ') : '—'}</span>
                 </div>
               </div>
             </div>
@@ -185,17 +185,18 @@ export default function IchkiArizalarPage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               {[
-                ['Ariza raqami', selected.arizaNumber],
-                ['Kategoriya', CATEGORIES[selected.category]?.label],
-                ['Ustuvorlik', PRIORITIES[selected.priority]?.label],
-                ['Status', STATUSES[selected.status]?.label],
-                ['Muallif', selected.isAnonymous ? 'Anonim' : selected.studentName],
+                ['Ariza raqami', selected.arizaNumber || '—'],
+                ['Kategoriya', CATEGORIES[selected.category]?.label || selected.category],
+                ['Ustuvorlik', PRIORITIES[selected.priority]?.label || selected.priority],
+                ['Status', STATUSES[selected.status]?.label || selected.status],
+                ['Muallif', selected.isAnonymous ? 'Anonim' : (selected.studentName || '—')],
+                ['Yotoqxona', selected.dormitory?.name || '—'],
                 ['Xona', selected.roomNumber || '—'],
-                ['Sana', new Date(selected.createdAt).toLocaleString('uz-UZ')],
+                ['Sana', selected.createdAt ? new Date(selected.createdAt).toLocaleString('uz-UZ') : '—'],
               ].map(([k, v]) => (
                 <div key={k}>
                   <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 2 }}>{k}</div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{v}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{v || '—'}</div>
                 </div>
               ))}
             </div>

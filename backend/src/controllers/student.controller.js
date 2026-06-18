@@ -163,16 +163,18 @@ exports.createStudent = async (req, res) => {
     parentPhone, direction,
   } = req.body;
 
-  if (!firstName || !lastName || !pinfl || !faculty || !dateOfBirth) {
-    return error(res, 'Ism, familiya, PINFL, fakultet va tug\'ilgan sana majburiy', 400);
+  if (!firstName || !lastName || !faculty || !dateOfBirth) {
+    return error(res, 'Ism, familiya, fakultet va tug\'ilgan sana majburiy', 400);
   }
 
-  const existingUser = await prisma.user.findFirst({ where: { pinfl } });
-  if (existingUser) return error(res, 'Bu PINFL allaqachon tizimda mavjud', 409);
+  if (pinfl) {
+    const existingUser = await prisma.user.findFirst({ where: { pinfl } });
+    if (existingUser) return error(res, 'Bu PINFL allaqachon tizimda mavjud', 409);
+  }
 
-  const emailToUse = `${pinfl}@student.uz`;
+  const emailToUse = pinfl ? `${pinfl}@student.uz` : `student_${uuidv4().slice(0, 8)}@ttj.uz`;
   const existingEmail = await prisma.user.findFirst({ where: { email: emailToUse } });
-  if (existingEmail) return error(res, 'Bu PINFL bilan email allaqachon mavjud', 409);
+  if (existingEmail) return error(res, 'Bu email allaqachon mavjud', 409);
 
   const photoUrl = req.file ? `/uploads/students/${req.file.filename}` : null;
 

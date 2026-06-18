@@ -107,12 +107,19 @@ export default function ProfilePage() {
       <div style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', borderRadius: '16px', padding: '24px', marginBottom: '24px', color: 'white', display: 'flex', gap: '20px', alignItems: 'center' }}>
         <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileInputRef.current.click()}>
           {profile.photoUrl ? (
-            <img src={profile.photoUrl.startsWith('http') ? profile.photoUrl : `${API_HOST}${profile.photoUrl}`} alt="avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.5)' }} />
-          ) : (
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 700 }}>
-              {profile.firstName?.[0]}{profile.lastName?.[0]}
-            </div>
-          )}
+            <img
+              src={profile.photoUrl.startsWith('http') ? profile.photoUrl : `${API_HOST}${profile.photoUrl}`}
+              alt=""
+              style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.5)' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: profile.photoUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 700 }}>
+            {profile.firstName?.[0]}{profile.lastName?.[0]}
+          </div>
           <div style={{ position: 'absolute', bottom: 0, right: 0, background: '#1a3a6b', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>+</div>
         </div>
         <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} ref={fileInputRef} />

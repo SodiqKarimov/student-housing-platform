@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
@@ -30,13 +30,39 @@ const ROLE_LABELS = {
   STUDENT: 'Talaba',
 };
 
+function useCurrentTime() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+const DAYS_UZ = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const now = useCurrentTime();
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
   const isMobile = window.innerWidth <= 768;
+
+  const hour = now.getHours();
+  const isGreenMode = hour >= 5 && hour < 22;
+  const timeStr = now.toTimeString().slice(0, 8);
+  const dateStr = `${DAYS_UZ[now.getDay()]}, ${now.toLocaleDateString('uz-UZ')}`;
+
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' && globalSearch.trim()) {
+      navigate(`/students?search=${encodeURIComponent(globalSearch.trim())}`);
+      setGlobalSearch('');
+    }
+  };
 
   // Ekran o'lchamini kuzatish
   useEffect(() => {
@@ -148,20 +174,37 @@ export default function Layout({ children }) {
       {/* Asosiy kontent */}
       <main style={styles.main}>
         <div style={styles.topBar}>
-          {/* Mobile hamburger */}
           {isMobile && (
             <button onClick={() => setMobileOpen(true)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#1a3a6b', padding: '4px 8px' }}>
               ☰
             </button>
           )}
           <div style={styles.breadcrumb}>{currentPage}</div>
-          <div style={styles.topBarRight}>
-            <span style={{ ...styles.standardBadge, display: isMobile ? 'none' : 'block' }}>
-              O'RQ-547 | OneID | HEMIS
-            </span>
-            <span style={{ fontSize: 12, color: '#666', display: isMobile ? 'block' : 'none' }}>
-              {user?.firstName}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'flex-end' }}>
+            {/* Global qidiruv */}
+            {!isMobile && (
+              <input
+                value={globalSearch}
+                onChange={e => setGlobalSearch(e.target.value)}
+                onKeyDown={handleSearch}
+                placeholder="Talaba qidirish... (Enter)"
+                style={{ padding: '6px 14px', border: '1px solid #d1d5db', borderRadius: '20px', fontSize: 13, width: 200, outline: 'none', background: '#f9fafb' }}
+              />
+            )}
+            {/* Yashil rejim indikatori */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: isGreenMode ? '#d1fae5' : '#fef3c7', borderRadius: 20, padding: '4px 12px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: isGreenMode ? '#10b981' : '#f59e0b', display: 'inline-block', boxShadow: isGreenMode ? '0 0 0 2px #a7f3d0' : '0 0 0 2px #fde68a' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: isGreenMode ? '#065f46' : '#92400e' }}>
+                {isGreenMode ? 'Yashil rejim' : 'Nazorat rejimi'}
+              </span>
+            </div>
+            {/* Soat */}
+            {!isMobile && (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3a6b', fontVariantNumeric: 'tabular-nums' }}>{timeStr}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{dateStr}</div>
+              </div>
+            )}
           </div>
         </div>
         <div style={styles.content}>{children}</div>

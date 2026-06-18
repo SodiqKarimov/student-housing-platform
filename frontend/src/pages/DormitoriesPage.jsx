@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { dormitoryApi, userApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const EMPTY_DORM = { name: '', address: '', region: '', floors: '', totalRooms: '', totalCapacity: '', genderRestriction: '', phoneNumber: '', managerId: '' };
+const EMPTY_DORM = { name: '', address: '', region: '', floors: '', genderRestriction: '', phoneNumber: '' };
 const EMPTY_ROOM = { roomNumber: '', floor: '1', type: 'DOUBLE', capacity: '2', pricePerMonth: '0' };
 const ROOM_TYPE_LABELS = { SINGLE: 'Yakka', DOUBLE: 'Juft', TRIPLE: 'Uchlik', QUAD: "To'rtlik" };
 
@@ -67,9 +67,6 @@ export default function DormitoriesPage() {
     setEditDormTarget(null);
     setError('');
     setShowDormModal(true);
-    userApi.getAll({ role: 'ADMIN', limit: 100 })
-      .then(({ data }) => setAdminUsers(data.data?.items || []))
-      .catch(() => {});
   };
 
   const openEditDorm = (dorm) => {
@@ -78,18 +75,12 @@ export default function DormitoriesPage() {
       address: dorm.address || '',
       region: dorm.region || '',
       floors: dorm.floors ? String(dorm.floors) : '',
-      totalRooms: String(dorm.totalRooms || ''),
-      totalCapacity: String(dorm.totalCapacity || ''),
       genderRestriction: dorm.genderRestriction || '',
       phoneNumber: dorm.phoneNumber || '',
-      managerId: dorm.managerId || '',
     });
     setEditDormTarget(dorm);
     setError('');
     setShowDormModal(true);
-    userApi.getAll({ role: 'ADMIN', limit: 100 })
-      .then(({ data }) => setAdminUsers(data.data?.items || []))
-      .catch(() => {});
   };
 
   const handleDeleteDorm = async (dorm) => {
@@ -126,15 +117,16 @@ export default function DormitoriesPage() {
   };
 
   const saveDorm = async () => {
+    if (!dormForm.name.trim()) { setError("Yotoqxona nomi majburiy"); return; }
     setSaving(true); setError('');
     try {
       const payload = {
-        ...dormForm,
+        name: dormForm.name.trim(),
+        address: dormForm.address || '',
+        region: dormForm.region || '',
         floors: dormForm.floors ? parseInt(dormForm.floors) : null,
-        totalRooms: parseInt(dormForm.totalRooms),
-        totalCapacity: parseInt(dormForm.totalCapacity),
         genderRestriction: dormForm.genderRestriction || null,
-        managerId: dormForm.managerId || null,
+        phoneNumber: dormForm.phoneNumber || null,
       };
       if (editDormTarget) {
         await dormitoryApi.update(editDormTarget.id, payload);
@@ -373,23 +365,15 @@ export default function DormitoriesPage() {
             </div>
             <div style={s.formGrid}>
               <Field label="Yotoqxona nomi *" value={dormForm.name} onChange={v => df('name', v)} span2 />
-              <Field label="Manzil *" value={dormForm.address} onChange={v => df('address', v)} span2 />
-              <Field label="Viloyat *" value={dormForm.region} onChange={v => df('region', v)} />
-              <SelectField label="Jinsi" value={dormForm.genderRestriction} onChange={v => df('genderRestriction', v)}
-                options={[['', "Cheklov yo'q"], ['MALE', 'Faqat erkaklar'], ['FEMALE', 'Faqat ayollar']]} />
+              <Field label="Manzil" value={dormForm.address} onChange={v => df('address', v)} span2 />
+              <Field label="Viloyat / Shahar" value={dormForm.region} onChange={v => df('region', v)} />
+              <SelectField label="Talabalar jinsi" value={dormForm.genderRestriction} onChange={v => df('genderRestriction', v)}
+                options={[['', "Aralash"], ['MALE', 'Faqat erkaklar'], ['FEMALE', 'Faqat ayollar']]} />
               <Field label="Qavatlar soni" type="number" value={dormForm.floors} onChange={v => df('floors', v)} placeholder="Masalan: 5" />
-              <Field label="Jami xonalar soni *" type="number" value={dormForm.totalRooms} onChange={v => df('totalRooms', v)} />
-              <Field label="Sig'im (jami o'rinlar) *" type="number" value={dormForm.totalCapacity} onChange={v => df('totalCapacity', v)} />
               <Field label="Telefon raqami" value={dormForm.phoneNumber} onChange={v => df('phoneNumber', v)} placeholder="+998..." />
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={s.label}>Rahbar (ADMIN)</label>
-                <select value={dormForm.managerId} onChange={e => df('managerId', e.target.value)} style={s.input}>
-                  <option value="">Rahbar tayinlanmagan</option>
-                  {adminUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>
-                  ))}
-                </select>
-              </div>
+            </div>
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#1e40af', marginBottom: 12 }}>
+              💡 Xonalar yotoqxona yaratilgandan keyin alohida qo'shiladi
             </div>
             {error && <div style={s.errorBox}>{error}</div>}
             <div style={s.modalFooter}>
