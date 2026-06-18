@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { studentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -20,11 +21,13 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 export default function StudentsPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const urlSearch = new URLSearchParams(location.search).get('search') || '';
   const [activeTab, setActiveTab] = useState('DORMITORY');
   const [students, setStudents] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(urlSearch);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
